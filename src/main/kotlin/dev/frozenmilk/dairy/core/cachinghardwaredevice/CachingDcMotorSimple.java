@@ -1,4 +1,4 @@
-package dev.frozenmilk.dairy.core.util.cachinghardwaredevice;
+package dev.frozenmilk.dairy.core.cachinghardwaredevice.cachinghardwaredevice;
 
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
