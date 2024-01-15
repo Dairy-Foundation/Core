@@ -1,4 +1,4 @@
-package dev.frozenmilk.dairy.core.cachinghardwaredevice.cachinghardwaredevice;
+package dev.frozenmilk.dairy.core.cachinghardwaredevice;
 
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoController;
