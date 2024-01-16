@@ -172,14 +172,13 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		activeOpMode = OpModeWrapper(opMode, meta)
 		opModeActive = true
 
-		activeOpMode!!.initialiseThings()
-
 		// resolves the queue of anything that was registered later
 		resolveRegistrationQueue()
 	}
 
 	@JvmStatic
 	fun onOpModePreInit(opMode: OpModeWrapper) {
+		opMode.initialiseThings()
 		resolveRegistrationQueue()
 		activeFeatures.forEach { it.get()?.preUserInitHook(opMode) }
 	}
