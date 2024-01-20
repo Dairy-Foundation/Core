@@ -12,10 +12,7 @@ import dev.frozenmilk.dairy.core.dependencyresolution.resolveDependencies
 import dev.frozenmilk.util.cell.LateInitCell
 import dev.frozenmilk.util.cell.LazyCell
 import dev.frozenmilk.util.cell.MirroredCell
-import dev.frozenmilk.util.cell.StaleAccessCell
 import org.firstinspires.ftc.ftccommon.external.OnCreateEventLoop
-import org.firstinspires.ftc.robotcore.internal.opmode.OpModeMeta
-import org.firstinspires.ftc.robotcore.internal.opmode.OpModeMeta.Flavor
 import org.firstinspires.ftc.robotcore.internal.opmode.RegisteredOpModes
 import java.lang.ref.WeakReference
 import java.util.ArrayDeque
@@ -73,6 +70,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	 */
 	@JvmStatic
 	fun registerFeature(feature: Feature) {
+		if (registeredFeatures.any { it.get() == feature }) return
 		val weakRef = WeakReference(feature)
 		registeredFeatures.add(weakRef)
 		if (!opModeActive) return
