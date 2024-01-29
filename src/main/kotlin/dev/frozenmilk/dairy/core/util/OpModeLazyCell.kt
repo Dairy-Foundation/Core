@@ -25,6 +25,10 @@ class OpModeLazyCell<T>(supplier: Supplier<T>) : LazyCell<T>(supplier), Feature 
 	}
 
 	override fun preUserInitHook(opMode: OpModeWrapper) { get() }
+
+	override fun postUserStopHook(opMode: OpModeWrapper) {
+		FeatureRegistrar.deregisterFeature(this)
+	}
 }
 
 @JvmName("CellUtils")
