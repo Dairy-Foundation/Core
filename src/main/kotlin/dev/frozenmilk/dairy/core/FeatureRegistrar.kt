@@ -5,6 +5,7 @@ import com.qualcomm.ftccommon.FtcEventLoop
 import com.qualcomm.robotcore.eventloop.opmode.OpMode
 import com.qualcomm.robotcore.eventloop.opmode.OpModeManagerImpl
 import com.qualcomm.robotcore.eventloop.opmode.OpModeManagerNotifier
+import com.qualcomm.robotcore.util.RobotLog
 import dev.frozenmilk.dairy.core.dependencyresolution.DependencyResolutionFailureException
 import dev.frozenmilk.dairy.core.dependencyresolution.FeatureDependencyResolutionFailureException
 import dev.frozenmilk.dairy.core.dependencyresolution.plus
@@ -19,6 +20,7 @@ import java.util.ArrayDeque
 import java.util.Queue
 
 object FeatureRegistrar : OpModeManagerNotifier.Notifications {
+	private const val TAG = "DairyCore"
 	/**
 	 * features that are registered to potentially become active
 	 */
@@ -27,7 +29,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	/**
 	 * intermediary collection of features that need to be checked to be added to the active pool
 	 */
-	private val registrationQueue: Queue<WeakReference<Feature>> = ArrayDeque()
+	private val registrationQueue: Queue<Pair<WeakReference<Feature>, Boolean>> = ArrayDeque()
 
 	/**
 	 * features that have been activated via [resolveDependencies]
@@ -53,7 +55,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	/**
 	 * the mirror cell used to manage this
 	 */
-	private val activeOpModeMirroredCell by LazyCell {
+	private var activeOpModeMirroredCell = LazyCell {
 		MirroredCell<OpMode?>(opModeManager, "activeOpMode")
 	}
 
@@ -62,8 +64,12 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	 */
 	@JvmStatic
 	var activeOpMode: OpModeWrapper?
-		get() = activeOpModeMirroredCell.get() as? OpModeWrapper
-		private set(value) = activeOpModeMirroredCell.accept(value)
+		get() {
+			return activeOpModeMirroredCell.safeGet()?.get() as? OpModeWrapper
+		}
+		private set(value) {
+			activeOpModeMirroredCell.get().accept(value)
+		}
 
 	/**
 	 * this is mildly expensive to do while an OpMode is running, especially if many features are registered
@@ -74,13 +80,34 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		val weakRef = WeakReference(feature)
 		registeredFeatures.add(weakRef)
 		if (!opModeActive) return
-		registrationQueue.add(weakRef)
+		registrationQueue.add(weakRef to true)
+	}
+
+	/**
+	 * this is mildly expensive to do while an OpMode is running, especially if many listeners are registered
+	 */
+	@JvmStatic
+	fun deregisterFeature(feature: Feature) {
+		registrationQueue.add(WeakReference(feature) to false)
 	}
 
 	private fun resolveRegistrationQueue() {
 		if (registrationQueue.isEmpty()) return
+		registrationQueue.filter { !it.second }
+				.forEach { (feature, _) ->
+					activeFeatures.remove(
+							activeFeatures.first {
+								it.get() == feature.get()
+							}
+					)
+					registeredFeatures.remove(
+							registeredFeatures.first {
+								it.get() == feature.get()
+							}
+					)
+				}
 		resolveDependencies(
-				registrationQueue.mapNotNull { it.get() }, // makes a copy of the set
+				registrationQueue.filter { it.second }.mapNotNull { it.first.get() }, // makes a copy of the set
 				activeFeatures.mapNotNull { it.get() },
 				activeFlags
 		).second.forEach {
@@ -107,47 +134,24 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		}
 	}
 
-	/**
-	 * this is mildly expensive to do while an OpMode is running, especially if many listeners are registered
-	 */
-	@JvmStatic
-	fun deregisterFeature(feature: Feature) {
-		activeFeatures.remove(
-				activeFeatures.first {
-					it.get() == feature
-				}
-		)
-		registeredFeatures.remove(
-				registeredFeatures.first {
-					it.get() == feature
-				}
-		)
-	}
+	private val opModeManagerCell = LateInitCell<OpModeManagerImpl>()
+	private var opModeManager by opModeManagerCell
 
-	private var opModeManager by LateInitCell<OpModeManagerImpl>()
-
-//	private val opModeMetaDataMap by StaleAccessCell<Map<Class<out OpMode>, OpModeMeta>>(0.5) {
-//		val res = mutableMapOf<OpMode, OpModeMeta>()
-//		RegisteredOpModes.getInstance().waitOpModesRegistered()
-//		RegisteredOpModes.getInstance().opModes
-//				.forEach {meta ->
-//					RegisteredOpModes.getInstance().getOpMode(meta.name)?.let {
-//						res[it] = meta
-//					}
-//				}
-//		res
-//	}
-//
-//	val activeOpModeMetadata: OpModeMeta?
-//		get() = opModeMetaDataMap[activeOpModeMirroredCell.get()]
-//
 	/**
 	 * registers this instance against the event loop, automatically called by the FtcEventLoop, should not be called by the user
 	 */
 	@OnCreateEventLoop
 	@JvmStatic
 	fun registerSelf(@Suppress("UNUSED_PARAMETER") context: Context, ftcEventLoop: FtcEventLoop) {
+		RobotLog.vv(TAG, "Registering self with event loop")
+		opModeManagerCell.safeInvoke {
+			RobotLog.vv(TAG, "Previously attached to an OpModeManager, detaching...")
+			it.unregisterListener(this)
+		}
+		RobotLog.vv(TAG, ftcEventLoop.opModeManager.toString())
 		opModeManager = ftcEventLoop.opModeManager
+		activeOpModeMirroredCell.invalidate()
+		RobotLog.vv(TAG, "Attaching to an OpModeManager")
 		opModeManager.registerListener(this)
 	}
 
@@ -161,7 +165,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		// locate feature flags, and then populate active listeners
 		activeFlags.addAll(opMode.javaClass.annotations)
 
-		registrationQueue.addAll(registeredFeatures)
+		registrationQueue.addAll(registeredFeatures.map{ it to true })
 		resolveRegistrationQueue()
 
 		val meta = RegisteredOpModes.getInstance().getOpModeMetadata(opModeManager.activeOpModeName) ?: throw RuntimeException("could not find metadata for OpMode")
@@ -172,6 +176,9 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 
 		// resolves the queue of anything that was registered later
 		resolveRegistrationQueue()
+
+		RobotLog.vv(TAG, "Initing opmode with the following active features:")
+		RobotLog.vv(TAG, activeFeatures.mapNotNull{ it.get()?.toString() }.toString())
 	}
 
 	@JvmStatic
@@ -248,5 +255,6 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		activeFeatures.clear()
 		activeFlags.clear()
 		opModeActive = false
+		System.gc()
 	}
 }

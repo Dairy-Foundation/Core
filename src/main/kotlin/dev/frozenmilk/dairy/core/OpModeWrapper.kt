@@ -37,18 +37,6 @@ class OpModeWrapper internal constructor(private val opMode: OpMode, val meta: O
 	 * since this wrapper gets made AFTER the OpMode gets made and has a bunch of info passed to it, its mainly just pulling things up into this
 	 */
 	internal fun initialiseThings() {
-		this.gamepad1 = opMode.gamepad1
-		this.gamepad2 = opMode.gamepad2
-
-		val latest1 = OpMode::class.java.getDeclaredField("latestGamepad1Data")
-		val latest2 = OpMode::class.java.getDeclaredField("latestGamepad2Data")
-
-		latest1.isAccessible = true
-		latest2.isAccessible = true
-
-		latest1.set(this, latest1.get(opMode))
-		latest2.set(this, latest2.get(opMode))
-
 		this.hardwareMap = opMode.hardwareMap
 		this.telemetry = opMode.telemetry
 
