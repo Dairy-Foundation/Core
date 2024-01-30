@@ -184,12 +184,14 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	@JvmStatic
 	fun onOpModePreInit(opMode: OpModeWrapper) {
 		opMode.initialiseThings()
+		opMode.pullGamepads()
 		resolveRegistrationQueue()
 		activeFeatures.forEach { it.get()?.preUserInitHook(opMode) }
 	}
 
 	@JvmStatic
 	fun onOpModePostInit(opMode: OpModeWrapper) {
+		opMode.pullGamepads()
 		resolveRegistrationQueue()
 		activeFeatures.forEach { it.get()?.postUserInitHook(opMode) }
 	}

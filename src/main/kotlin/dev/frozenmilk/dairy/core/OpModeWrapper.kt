@@ -1,8 +1,6 @@
 package dev.frozenmilk.dairy.core
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous
 import com.qualcomm.robotcore.eventloop.opmode.OpMode
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import org.firstinspires.ftc.robotcore.internal.opmode.OpModeMeta
 import org.firstinspires.ftc.robotcore.internal.opmode.OpModeMeta.Flavor
 
@@ -40,11 +38,13 @@ class OpModeWrapper internal constructor(private val opMode: OpMode, val meta: O
 		this.hardwareMap = opMode.hardwareMap
 		this.telemetry = opMode.telemetry
 
-		this.gamepad1 = opMode.gamepad1
-		this.gamepad2 = opMode.gamepad2
-
 		opModeType // initialises the lazy property
 		state = OpModeState.INIT
+	}
+
+	internal fun pullGamepads() {
+		this.gamepad1 = opMode.gamepad1
+		this.gamepad2 = opMode.gamepad2
 	}
 
 	override fun init() {
