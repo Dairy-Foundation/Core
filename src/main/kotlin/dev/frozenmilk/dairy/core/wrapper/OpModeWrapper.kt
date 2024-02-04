@@ -1,33 +1,18 @@
-package dev.frozenmilk.dairy.core
+package dev.frozenmilk.dairy.core.wrapper
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode
+import dev.frozenmilk.dairy.core.FeatureRegistrar
 import org.firstinspires.ftc.robotcore.internal.opmode.OpModeMeta
 import org.firstinspires.ftc.robotcore.internal.opmode.OpModeMeta.Flavor
 
-class OpModeWrapper internal constructor(private val opMode: OpMode, val meta: OpModeMeta) : OpMode() {
-	val opModeType: Flavor = meta.flavor
+class OpModeWrapper internal constructor(override val opMode: OpMode, override val meta: OpModeMeta) : OpMode(), Wrapper {
+	override val opModeType: Flavor = meta.flavor
 
-	enum class OpModeState {
-		/**
-		 * in [OpMode.init] or [OpMode.init_loop]
-		 */
-		INIT,
+	internal var _state = Wrapper.OpModeState.STOPPED
+	override val state: Wrapper.OpModeState
+		get() { return _state }
 
-		/**
-		 * in [OpMode.start], [OpMode.loop] or [OpMode.stop]
-		 */
-		ACTIVE,
-
-		/**
-		 * inactive
-		 */
-		STOPPED,
-	}
-
-	var state: OpModeState = OpModeState.STOPPED
-		internal set
-
-	val name = meta.displayName
+	override val name = meta.displayName
 
 	/**
 	 * moves things around, so that the irritating little fields that exist on each OpMode get remapped through this correctly
@@ -41,37 +26,36 @@ class OpModeWrapper internal constructor(private val opMode: OpMode, val meta: O
 		this.gamepad1 = opMode.gamepad1
 		this.gamepad2 = opMode.gamepad2
 
-		opModeType // initialises the lazy property
-		state = OpModeState.INIT
+		_state = Wrapper.OpModeState.INIT
 	}
 
 	override fun init() {
-		FeatureRegistrar.onOpModePreInit(this)
+		FeatureRegistrar.opModePreInit(this)
 		opMode.init()
-		FeatureRegistrar.onOpModePostInit(this)
+		FeatureRegistrar.opModePostInit(this)
 	}
 
 	override fun init_loop() {
-		FeatureRegistrar.onOpModePreInitLoop(this)
+		FeatureRegistrar.opModePreInitLoop(this)
 		opMode.init_loop()
-		FeatureRegistrar.onOpModePostInitLoop(this)
+		FeatureRegistrar.opModePostInitLoop(this)
 	}
 
 	override fun start() {
-		FeatureRegistrar.onOpModePreStart(this)
+		FeatureRegistrar.opModePreStart(this)
 		opMode.start()
-		FeatureRegistrar.onOpModePostStart(this)
+		FeatureRegistrar.opModePostStart(this)
 	}
 
 	override fun loop() {
-		FeatureRegistrar.onOpModePreLoop(this)
+		FeatureRegistrar.opModePreLoop(this)
 		opMode.loop()
-		FeatureRegistrar.onOpModePostLoop(this)
+		FeatureRegistrar.opModePostLoop(this)
 	}
 
 	override fun stop() {
-		FeatureRegistrar.onOpModePreStop(this)
+		FeatureRegistrar.opModePreStop(this)
 		opMode.stop()
-		FeatureRegistrar.onOpModePostStop(this)
+		FeatureRegistrar.opModePostStop(this)
 	}
 }

@@ -2,9 +2,9 @@ package dev.frozenmilk.dairy.core.util
 
 import dev.frozenmilk.dairy.core.Feature
 import dev.frozenmilk.dairy.core.FeatureRegistrar
-import dev.frozenmilk.dairy.core.OpModeWrapper
 import dev.frozenmilk.dairy.core.dependencyresolution.dependencies.Dependency
 import dev.frozenmilk.dairy.core.dependencyresolution.dependencyset.DependencySet
+import dev.frozenmilk.dairy.core.wrapper.Wrapper
 import dev.frozenmilk.util.cell.LazyCell
 import java.util.function.Supplier
 
@@ -24,9 +24,9 @@ class OpModeLazyCell<T>(supplier: Supplier<T>) : LazyCell<T>(supplier), Feature 
 		FeatureRegistrar.registerFeature(this)
 	}
 
-	override fun preUserInitHook(opMode: OpModeWrapper) { get() }
+	override fun preUserInitHook(opMode: Wrapper) { get() }
 
-	override fun postUserStopHook(opMode: OpModeWrapper) {
+	override fun postUserStopHook(opMode: Wrapper) {
 		FeatureRegistrar.deregisterFeature(this)
 	}
 }

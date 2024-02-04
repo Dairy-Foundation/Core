@@ -2,6 +2,7 @@ package dev.frozenmilk.dairy.core
 
 import android.content.Context
 import com.qualcomm.ftccommon.FtcEventLoop
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode
 import com.qualcomm.robotcore.eventloop.opmode.OpMode
 import com.qualcomm.robotcore.eventloop.opmode.OpModeManagerImpl
 import com.qualcomm.robotcore.eventloop.opmode.OpModeManagerNotifier
@@ -10,6 +11,10 @@ import dev.frozenmilk.dairy.core.dependencyresolution.DependencyResolutionFailur
 import dev.frozenmilk.dairy.core.dependencyresolution.FeatureDependencyResolutionFailureException
 import dev.frozenmilk.dairy.core.dependencyresolution.plus
 import dev.frozenmilk.dairy.core.dependencyresolution.resolveDependencies
+import dev.frozenmilk.dairy.core.wrapper.LinearOpModeWrapper
+import dev.frozenmilk.dairy.core.wrapper.OpModeWrapper
+import dev.frozenmilk.dairy.core.wrapper.Wrapper
+import dev.frozenmilk.sinister.targeting.TeamCodeSearch
 import dev.frozenmilk.util.cell.LateInitCell
 import dev.frozenmilk.util.cell.LazyCell
 import dev.frozenmilk.util.cell.MirroredCell
@@ -49,8 +54,8 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		private set
 
 	@JvmStatic
-	val opModeState: OpModeWrapper.OpModeState
-		get() = activeOpMode?.state ?: OpModeWrapper.OpModeState.STOPPED
+	val opModeState: Wrapper.OpModeState
+		get() = activeOpModeWrapper?.state ?: Wrapper.OpModeState.STOPPED
 
 	/**
 	 * the mirror cell used to manage this
@@ -63,13 +68,11 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	 * the currently active OpMode, contents may be undefined if [opModeActive] does not return true
 	 */
 	@JvmStatic
-	var activeOpMode: OpModeWrapper?
-		get() {
-			return activeOpModeMirroredCell.safeGet()?.get() as? OpModeWrapper
-		}
-		private set(value) {
-			activeOpModeMirroredCell.get().accept(value)
-		}
+	var activeOpModeWrapper by LazyCell<Wrapper?> { null }
+		private set
+
+	val activeOpMode: OpMode?
+		get() { return activeOpModeMirroredCell.get().get() }
 
 	/**
 	 * this is mildly expensive to do while an OpMode is running, especially if many features are registered
@@ -162,6 +165,17 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	override fun onOpModePreInit(opMode: OpMode) {
 		cleanFeatures()
 
+		when (val options = opMode.javaClass.getAnnotation(Options::class.java)) {
+			null -> {
+				if (!TeamCodeSearch().determineInclusion(opMode.javaClass.`package`.toString())) {
+					return
+				}
+			}
+			else -> {
+				if (!options.activate) return
+			}
+		}
+
 		// locate feature flags, and then populate active listeners
 		activeFlags.addAll(opMode.javaClass.annotations)
 
@@ -171,7 +185,16 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		val meta = RegisteredOpModes.getInstance().getOpModeMetadata(opModeManager.activeOpModeName) ?: throw RuntimeException("could not find metadata for OpMode")
 
 		// replace the OpMode with a wrapper that the user never sees, but provides our hooks
-		activeOpMode = OpModeWrapper(opMode, meta)
+		activeOpModeWrapper = when (opMode) {
+			is LinearOpMode -> {
+				LinearOpModeWrapper(opMode, meta)
+			}
+			else -> {
+				val wrapper = OpModeWrapper(opMode, meta)
+				activeOpModeMirroredCell.get().accept(wrapper)
+				wrapper
+			}
+		}
 		opModeActive = true
 
 		// resolves the queue of anything that was registered later
@@ -182,35 +205,36 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	}
 
 	@JvmStatic
-	fun onOpModePreInit(opMode: OpModeWrapper) {
-		opMode.initialiseThings()
-		opMode.pullGamepads()
+	fun opModePreInit(opMode: Wrapper) {
+		if (opMode is OpModeWrapper) opMode.initialiseThings()
 		resolveRegistrationQueue()
 		activeFeatures.forEach { it.get()?.preUserInitHook(opMode) }
 	}
 
 	@JvmStatic
-	fun onOpModePostInit(opMode: OpModeWrapper) {
-		opMode.pullGamepads()
+	fun opModePostInit(opMode: Wrapper) {
 		resolveRegistrationQueue()
 		activeFeatures.forEach { it.get()?.postUserInitHook(opMode) }
 	}
 
 	@JvmStatic
-	fun onOpModePreInitLoop(opMode: OpModeWrapper) {
+	fun opModePreInitLoop(opMode: Wrapper) {
 		resolveRegistrationQueue()
 		activeFeatures.forEach { it.get()?.preUserInitLoopHook(opMode) }
 	}
 
 	@JvmStatic
-	fun onOpModePostInitLoop(opMode: OpModeWrapper) {
+	fun opModePostInitLoop(opMode: Wrapper) {
 		resolveRegistrationQueue()
 		activeFeatures.forEach { it.get()?.postUserInitLoopHook(opMode) }
 	}
 
 	@JvmStatic
-	fun onOpModePreStart(opMode: OpModeWrapper) {
-		opMode.state = OpModeWrapper.OpModeState.ACTIVE
+	fun opModePreStart(opMode: Wrapper) {
+		when (opMode) {
+			is OpModeWrapper -> opMode._state = Wrapper.OpModeState.ACTIVE
+			is LinearOpModeWrapper -> opMode._state = Wrapper.OpModeState.ACTIVE
+		}
 		resolveRegistrationQueue()
 		activeFeatures.forEach { it.get()?.preUserStartHook(opMode) }
 	}
@@ -220,34 +244,37 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	}
 
 	@JvmStatic
-	fun onOpModePostStart(opMode: OpModeWrapper) {
+	fun opModePostStart(opMode: Wrapper) {
 		resolveRegistrationQueue()
 		activeFeatures.forEach { it.get()?.postUserStartHook(opMode) }
 	}
 
 	@JvmStatic
-	fun onOpModePreLoop(opMode: OpModeWrapper) {
+	fun opModePreLoop(opMode: Wrapper) {
 		resolveRegistrationQueue()
 		activeFeatures.forEach { it.get()?.preUserLoopHook(opMode) }
 	}
 
 	@JvmStatic
-	fun onOpModePostLoop(opMode: OpModeWrapper) {
+	fun opModePostLoop(opMode: Wrapper) {
 		resolveRegistrationQueue()
 		activeFeatures.forEach { it.get()?.postUserLoopHook(opMode) }
 	}
 
 	@JvmStatic
-	fun onOpModePreStop(opMode: OpModeWrapper) {
+	fun opModePreStop(opMode: Wrapper) {
 		resolveRegistrationQueue()
 		activeFeatures.forEach { it.get()?.preUserStopHook(opMode) }
 	}
 
 	@JvmStatic
-	fun onOpModePostStop(opMode: OpModeWrapper) {
+	fun opModePostStop(opMode: Wrapper) {
 		resolveRegistrationQueue()
 		activeFeatures.forEach { it.get()?.postUserStopHook(opMode) }
-		opMode.state = OpModeWrapper.OpModeState.STOPPED
+		when (opMode) {
+			is OpModeWrapper -> opMode._state = Wrapper.OpModeState.STOPPED
+			is LinearOpModeWrapper -> opMode._state = Wrapper.OpModeState.STOPPED
+		}
 	}
 
 	override fun onOpModePostStop(opMode: OpMode) {
@@ -259,4 +286,14 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		opModeActive = false
 		System.gc()
 	}
+
+	/**
+	 * apply to an opmode to set FeatureRegistrar options
+	 *
+	 * External library opmodes:
+	 * all non teamcode opmodes need to have this applied with [activate] set to true, otherwise they will not cause the FeatureRegistrar to activate
+	 */
+	annotation class Options (
+		val activate: Boolean = true
+	)
 }

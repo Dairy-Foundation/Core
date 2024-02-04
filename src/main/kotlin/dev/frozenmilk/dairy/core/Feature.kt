@@ -1,6 +1,7 @@
 package dev.frozenmilk.dairy.core
 
 import dev.frozenmilk.dairy.core.dependencyresolution.dependencies.Dependency
+import dev.frozenmilk.dairy.core.wrapper.Wrapper
 import dev.frozenmilk.sinister.Preload
 
 /**
@@ -10,7 +11,7 @@ import dev.frozenmilk.sinister.Preload
  *
  * Instances can be deregistered against the EventRegistrar using .deregisterListener(this), should they wish to do so of their own violation
  *
- * WARNING: all classes that implement [Feature] are [Preload] by [dev.frozenmilk.sinister.Sinister] via the [FeatureSinisterFilter], this should most likely not cause issues
+ * WARNING: all classes that implement [Feature] are [Preload]ed by [dev.frozenmilk.sinister.Sinister] via the [FeatureSinisterFilter], this should most likely not cause issues
  */
 @Preload
 interface Feature {
@@ -19,53 +20,27 @@ interface Feature {
 	 */
 	val dependencies: Set<Dependency<*, *>>
 
-	/**
-	 * provided by [OpModeWrapper]
-	 */
-	fun preUserInitHook(opMode: OpModeWrapper) {}
+	fun preUserInitHook(opMode: Wrapper) {}
 
-	/**
-	 * provided by [OpModeWrapper]
-	 */
-	fun postUserInitHook(opMode: OpModeWrapper) {}
+	fun postUserInitHook(opMode: Wrapper) {}
 
-	/**
-	 * provided by [OpModeWrapper]
-	 */
-	fun preUserInitLoopHook(opMode: OpModeWrapper) {}
+	fun preUserInitLoopHook(opMode: Wrapper) {}
 
-	/**
-	 * provided by [OpModeWrapper]
-	 */
-	fun postUserInitLoopHook(opMode: OpModeWrapper) {}
+	fun postUserInitLoopHook(opMode: Wrapper) {}
 
-	/**
-	 * provided by [OpModeWrapper]
-	 */
-	fun preUserStartHook(opMode: OpModeWrapper) {}
+	fun preUserStartHook(opMode: Wrapper) {}
 
-	/**
-	 * provided by [OpModeWrapper]
-	 */
-	fun postUserStartHook(opMode: OpModeWrapper) {}
+	fun postUserStartHook(opMode: Wrapper) {}
 
-	/**
-	 * provided by [OpModeWrapper]
-	 */
-	fun preUserLoopHook(opMode: OpModeWrapper) {}
+	fun preUserLoopHook(opMode: Wrapper) {}
 
-	/**
-	 * provided by [OpModeWrapper]
-	 */
-	fun postUserLoopHook(opMode: OpModeWrapper) {}
+	fun postUserLoopHook(opMode: Wrapper) {}
 
-	/**
-	 * provided by [OpModeWrapper]
-	 */
-	fun preUserStopHook(opMode: OpModeWrapper) {}
+	fun preUserStopHook(opMode: Wrapper) {}
 
-	/**
-	 * provided by [OpModeWrapper]
-	 */
-	fun postUserStopHook(opMode: OpModeWrapper) {}
+	fun postUserStopHook(opMode: Wrapper) {}
+
+	fun register(): Feature { return also { FeatureRegistrar.registerFeature(this) } }
+
+	fun deregister(): Feature { return also { FeatureRegistrar.deregisterFeature(this) } }
 }

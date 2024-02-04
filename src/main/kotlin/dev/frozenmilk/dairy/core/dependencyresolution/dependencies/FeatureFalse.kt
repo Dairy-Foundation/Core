@@ -1,7 +1,6 @@
 package dev.frozenmilk.dairy.core.dependencyresolution.dependencies
 
 import dev.frozenmilk.dairy.core.Feature
-import dev.frozenmilk.dairy.core.OpModeWrapper
 import dev.frozenmilk.dairy.core.dependencyresolution.dependencyset.DependencySet
 
 /**
