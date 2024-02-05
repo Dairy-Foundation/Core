@@ -2,6 +2,7 @@ package dev.frozenmilk.dairy.core
 
 import dev.frozenmilk.dairy.core.dependencyresolution.dependencies.Dependency
 import dev.frozenmilk.dairy.core.dependencyresolution.dependencyset.DependencySet
+import dev.frozenmilk.dairy.core.wrapper.Wrapper
 import dev.frozenmilk.util.cell.LazyCell
 import java.util.function.Supplier
 
@@ -21,11 +22,11 @@ class OpModeFreshLazyCell<T>(supplier: Supplier<T>) : LazyCell<T>(supplier), Fea
         FeatureRegistrar.registerFeature(this)
     }
 
-    override fun preUserInitHook(opMode: OpModeWrapper) {
+    override fun preUserInitHook(opMode: Wrapper) {
         invalidate()
         get()
     }
 }
 
 @JvmName("CellUtils")
-fun <T> Supplier<T>.intoOpModeLazyCell() = OpModeLazyCell(this)
+fun <T> Supplier<T>.intoOpModeFreshLazyCell() = OpModeFreshLazyCell(this)
