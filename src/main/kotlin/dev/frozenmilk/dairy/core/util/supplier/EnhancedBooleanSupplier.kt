@@ -65,17 +65,20 @@ class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, pr
 	/**
 	 * equivalent to [get]
 	 */
+	@get:JvmName("state")
 	val state: Boolean get() { return get() }
 
 	/**
 	 * a rising edge detector for this
 	 */
-	val whenTrue: Boolean get() { return get() && !previous }
+	@get:JvmName("onTrue")
+	val onTrue: Boolean get() { return get() && !previous }
 
 	/**
 	 * a falling edge detector for this
 	 */
-	val whenFalse: Boolean get() { return !get() && previous }
+	@get:JvmName("onFalse")
+	val onFalse: Boolean get() { return !get() && previous }
 
 	/**
 	 * non-mutating

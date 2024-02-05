@@ -73,13 +73,13 @@ class EnhancedBooleanSuppliers {
 	}
 	fun testFallingEdge(new: Boolean, expected: Boolean) {
 		state = new
-		val res = enhancedBooleanSupplier.whenFalse
+		val res = enhancedBooleanSupplier.onFalse
 		Assert.assertEquals(expected, res)
 		enhancedBooleanSupplier.invalidate()
 	}
 	fun testRisingEdge(new: Boolean, expected: Boolean) {
 		state = new
-		val res = enhancedBooleanSupplier.whenTrue
+		val res = enhancedBooleanSupplier.onTrue
 		Assert.assertEquals(expected, res)
 		enhancedBooleanSupplier.invalidate()
 	}
