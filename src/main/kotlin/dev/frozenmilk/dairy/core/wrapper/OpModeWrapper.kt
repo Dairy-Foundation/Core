@@ -12,7 +12,7 @@ class OpModeWrapper internal constructor(override val opMode: OpMode, override v
 	override val state: Wrapper.OpModeState
 		get() { return _state }
 
-	override val name = meta.displayName
+	override val name: String = meta.displayName
 
 	/**
 	 * moves things around, so that the irritating little fields that exist on each OpMode get remapped through this correctly
@@ -25,8 +25,6 @@ class OpModeWrapper internal constructor(override val opMode: OpMode, override v
 
 		this.gamepad1 = opMode.gamepad1
 		this.gamepad2 = opMode.gamepad2
-
-		_state = Wrapper.OpModeState.INIT
 	}
 
 	override fun init() {

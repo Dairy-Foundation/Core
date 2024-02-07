@@ -14,7 +14,6 @@ import dev.frozenmilk.dairy.core.dependencyresolution.resolveDependencies
 import dev.frozenmilk.dairy.core.wrapper.LinearOpModeWrapper
 import dev.frozenmilk.dairy.core.wrapper.OpModeWrapper
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
-import dev.frozenmilk.sinister.targeting.TeamCodeSearch
 import dev.frozenmilk.util.cell.LateInitCell
 import dev.frozenmilk.util.cell.LazyCell
 import dev.frozenmilk.util.cell.MirroredCell
@@ -64,12 +63,18 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		MirroredCell<OpMode?>(opModeManager, "activeOpMode")
 	}
 
+	private val activeOpModeWrapperCell  = LateInitCell<Wrapper>()
+
 	/**
 	 * the currently active OpMode, contents may be undefined if [opModeActive] does not return true
 	 */
 	@JvmStatic
-	var activeOpModeWrapper by LazyCell<Wrapper?> { null }
-		private set
+	var activeOpModeWrapper: Wrapper?
+		get() { return activeOpModeWrapperCell.safeGet() }
+		private set(value) {
+			if (value == null) activeOpModeWrapperCell.invalidate()
+			else activeOpModeWrapperCell.accept(value)
+		}
 
 	val activeOpMode: OpMode?
 		get() { return activeOpModeMirroredCell.get().get() }
@@ -165,17 +170,6 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	override fun onOpModePreInit(opMode: OpMode) {
 		cleanFeatures()
 
-		when (val options = opMode.javaClass.getAnnotation(Options::class.java)) {
-			null -> {
-				if (!TeamCodeSearch().determineInclusion(opMode.javaClass.`package`.toString())) {
-					return
-				}
-			}
-			else -> {
-				if (!options.activate) return
-			}
-		}
-
 		// locate feature flags, and then populate active listeners
 		activeFlags.addAll(opMode.javaClass.annotations)
 
@@ -207,6 +201,10 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	@JvmStatic
 	fun opModePreInit(opMode: Wrapper) {
 		if (opMode is OpModeWrapper) opMode.initialiseThings()
+		when (opMode) {
+			is OpModeWrapper -> opMode._state = Wrapper.OpModeState.INIT
+			is LinearOpModeWrapper -> opMode._state = Wrapper.OpModeState.INIT
+		}
 		resolveRegistrationQueue()
 		activeFeatures.forEach { it.get()?.preUserInitHook(opMode) }
 	}
@@ -286,14 +284,4 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		opModeActive = false
 		System.gc()
 	}
-
-	/**
-	 * apply to an opmode to set FeatureRegistrar options
-	 *
-	 * External library opmodes:
-	 * all non teamcode opmodes need to have this applied with [activate] set to true, otherwise they will not cause the FeatureRegistrar to activate
-	 */
-	annotation class Options (
-		val activate: Boolean = true
-	)
 }
