@@ -16,7 +16,6 @@ class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, pr
 		private set
 	private var timeMarker = 0L
 	private fun update() {
-		if (frozen) return
 		previous = current
 		val time = System.nanoTime()
 		if(!current && booleanSupplier.get()){
@@ -38,10 +37,6 @@ class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, pr
 		}
 	}
 
-	/**
-	 * if set to true, will lock this supplier at its last output
-	 */
-	var frozen = false
 	private var valid = false
 
 	/**
