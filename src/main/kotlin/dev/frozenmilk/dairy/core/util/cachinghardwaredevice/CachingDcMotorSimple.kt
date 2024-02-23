@@ -21,7 +21,7 @@ open class CachingDcMotorSimple
 	 * Allows an initial setting of a custom changeThreshold
 	 *
 	 * @param dcMotorSimple the simple motor to encapsulate in the caching control
-	 * @param changeThreshold the threshold at which the cache should write new values to the motorSimple
+	 * @param cachingTolerance the threshold at which the cache should write new values to the motorSimple
 	 */
 	/**
 	 * Sets the logical direction in which this motor operates.
@@ -50,7 +50,7 @@ open class CachingDcMotorSimple
 	 */
 	override fun setPower(power: Double) {
 		// will accept the input if it is targeting 0, or full power in any direction, or if it has changed a sufficient amount
-		if (Math.abs(power - cachedPower) >= cachingTolerance || power == 0.0 && cachedPower != 0.0 || power >= 1.0 && !(cachedPower >= 1.0) || power <= -1.0 && !(cachedPower <= -1.0)) {
+		if (abs(power - cachedPower) >= cachingTolerance || power == 0.0 && cachedPower != 0.0 || power >= 1.0 && !(cachedPower >= 1.0) || power <= -1.0 && !(cachedPower <= -1.0)) {
 			cachedPower = power
 			dcMotorSimple.power = power
 		}
@@ -74,7 +74,7 @@ open class CachingDcMotorSimple
 	}
 
 	/**
-	 *
+	 * ignores the caching tolerance
 	 */
 	fun setPowerRaw(power: Double): Boolean {
 		val cachingTolerance = this.cachingTolerance

@@ -181,7 +181,6 @@ class YieldsTo(override val feature: Feature, private vararg val features: Class
 
 class DependsDirectlyOn(override val feature: Feature, private vararg  val features: Feature) : Dependency<Collection<Feature>, Collection<Feature>> {
 	override fun resolves(args: Collection<Feature>): Pair<Boolean, Collection<Feature>> {
-		//return features.all { it in args } to features.toList()
 		var resolves = true
 		features.forEach {
 			val found = it in args

@@ -1,4 +1,4 @@
-package dev.frozenmilk.dairy.core.util.supplier
+package dev.frozenmilk.dairy.core.util.supplier.logical
 
 import dev.frozenmilk.dairy.core.Feature
 import dev.frozenmilk.dairy.core.FeatureRegistrar
@@ -6,12 +6,14 @@ import dev.frozenmilk.dairy.core.dependencyresolution.dependencyset.DependencySe
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
 import java.util.function.Supplier
 
-class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, private val risingDebounce: Long, private val fallingDebounce: Long) : Supplier<Boolean>, Feature{
+open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, private val risingDebounce: Long, private val fallingDebounce: Long) : Supplier<Boolean>, Feature{
 	constructor(booleanSupplier: Supplier<Boolean>) : this(booleanSupplier, 0, 0)
 	private var previous = booleanSupplier.get()
 	private var current = booleanSupplier.get()
+	@get:JvmName("toggleTrue")
 	var toggleTrue = booleanSupplier.get()
 		private set
+	@get:JvmName("toggleFalse")
 	var toggleFalse = booleanSupplier.get()
 		private set
 	private var timeMarker = 0L
@@ -139,47 +141,34 @@ class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, pr
 			.yields()
 
 	init {
-		FeatureRegistrar.registerFeature(this)
+		register()
 	}
 
-	override fun preUserInitHook(opMode: Wrapper) {
-		get()
+	/**
+	 * if this automatically updates, by calling [invalidate] and [get]
+	 */
+	var autoUpdates = true
+	private fun autoUpdatePre() {
+		if (autoUpdates) {
+			get()
+		}
+	}
+	private fun autoUpdatePost() {
+		if (autoUpdates) {
+			invalidate()
+		}
 	}
 
-	override fun postUserInitHook(opMode: Wrapper) {
-		invalidate()
-	}
-
-	override fun preUserInitLoopHook(opMode: Wrapper) {
-		get()
-	}
-
-	override fun postUserInitLoopHook(opMode: Wrapper) {
-		invalidate()
-	}
-
-	override fun preUserStartHook(opMode: Wrapper) {
-		get()
-	}
-
-	override fun postUserStartHook(opMode: Wrapper) {
-		invalidate()
-	}
-
-	override fun preUserLoopHook(opMode: Wrapper) {
-		get()
-	}
-
-	override fun postUserLoopHook(opMode: Wrapper) {
-		invalidate()
-	}
-
-	override fun preUserStopHook(opMode: Wrapper) {
-		get()
-	}
-
+	override fun preUserInitHook(opMode: Wrapper) = autoUpdatePre()
+	override fun postUserInitHook(opMode: Wrapper) = autoUpdatePost()
+	override fun preUserInitLoopHook(opMode: Wrapper) = autoUpdatePre()
+	override fun postUserInitLoopHook(opMode: Wrapper) = autoUpdatePost()
+	override fun preUserStartHook(opMode: Wrapper) = autoUpdatePre()
+	override fun postUserStartHook(opMode: Wrapper) = autoUpdatePost()
+	override fun preUserLoopHook(opMode: Wrapper) = autoUpdatePre()
+	override fun postUserLoopHook(opMode: Wrapper) = autoUpdatePost()
+	override fun preUserStopHook(opMode: Wrapper) = autoUpdatePre()
 	override fun postUserStopHook(opMode: Wrapper) {
-		invalidate()
-		FeatureRegistrar.deregisterFeature(this)
+		deregister()
 	}
 }

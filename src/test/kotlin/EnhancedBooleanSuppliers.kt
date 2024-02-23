@@ -1,4 +1,4 @@
-import dev.frozenmilk.dairy.core.util.supplier.EnhancedBooleanSupplier
+import dev.frozenmilk.dairy.core.util.supplier.logical.EnhancedBooleanSupplier
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
