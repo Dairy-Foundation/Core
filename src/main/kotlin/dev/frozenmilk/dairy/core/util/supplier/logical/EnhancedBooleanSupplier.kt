@@ -6,7 +6,7 @@ import dev.frozenmilk.dairy.core.dependencyresolution.dependencyset.DependencySe
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
 import java.util.function.Supplier
 
-open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, private val risingDebounce: Long, private val fallingDebounce: Long) : Supplier<Boolean>, Feature{
+open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, private val risingDebounce: Long, private val fallingDebounce: Long) : Feature{
 	constructor(booleanSupplier: Supplier<Boolean>) : this(booleanSupplier, 0, 0)
 	private var previous = booleanSupplier.get()
 	private var current = booleanSupplier.get()
@@ -51,7 +51,8 @@ open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean
 	/**
 	 * returns the current boolean state of this
 	 */
-	override fun get(): Boolean {
+	@get:JvmName("state")
+	val state: Boolean get() {
 		if (!valid) {
 			update()
 			valid = true
@@ -60,22 +61,16 @@ open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean
 	}
 
 	/**
-	 * equivalent to [get]
-	 */
-	@get:JvmName("state")
-	val state: Boolean get() { return get() }
-
-	/**
 	 * a rising edge detector for this
 	 */
 	@get:JvmName("onTrue")
-	val onTrue: Boolean get() { return get() && !previous }
+	val onTrue: Boolean get() { return state && !previous }
 
 	/**
 	 * a falling edge detector for this
 	 */
 	@get:JvmName("onFalse")
-	val onFalse: Boolean get() { return !get() && previous }
+	val onFalse: Boolean get() { return !state && previous }
 
 	/**
 	 * non-mutating
@@ -111,21 +106,39 @@ open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean
 	 *
 	 * @return a new EnhancedBooleanSupplier that combines the two conditions
 	 */
-	infix fun and(booleanSupplier: Supplier<Boolean>) = EnhancedBooleanSupplier { this.get() and booleanSupplier.get() }
+	infix fun and(booleanSupplier: Supplier<Boolean>) = EnhancedBooleanSupplier { this.state and booleanSupplier.get() }
+	/**
+	 * non-mutating
+	 *
+	 * @return a new EnhancedBooleanSupplier that combines the two conditions
+	 */
+	infix fun and(booleanSupplier: EnhancedBooleanSupplier) = EnhancedBooleanSupplier { this.state and booleanSupplier.state }
 
 	/**
 	 * non-mutating
 	 *
 	 * @return a new EnhancedBooleanSupplier that combines the two conditions
 	 */
-	infix fun or(booleanSupplier: Supplier<Boolean>) = EnhancedBooleanSupplier { this.get() or booleanSupplier.get() }
+	infix fun or(booleanSupplier: Supplier<Boolean>) = EnhancedBooleanSupplier { this.state or booleanSupplier.get() }
+	/**
+	 * non-mutating
+	 *
+	 * @return a new EnhancedBooleanSupplier that combines the two conditions
+	 */
+	infix fun or(booleanSupplier: EnhancedBooleanSupplier) = EnhancedBooleanSupplier { this.state or booleanSupplier.state }
 
 	/**
 	 * non-mutating
 	 *
 	 * @return a new EnhancedBooleanSupplier that combines the two conditions
 	 */
-	infix fun xor(booleanSupplier: Supplier<Boolean>) = EnhancedBooleanSupplier { this.get() xor booleanSupplier.get() }
+	infix fun xor(booleanSupplier: Supplier<Boolean>) = EnhancedBooleanSupplier { this.state xor booleanSupplier.get() }
+	/**
+	 * non-mutating
+	 *
+	 * @return a new EnhancedBooleanSupplier that combines the two conditions
+	 */
+	infix fun xor(booleanSupplier: EnhancedBooleanSupplier) = EnhancedBooleanSupplier { this.state xor booleanSupplier.state }
 
 	/**
 	 * non-mutating
@@ -141,16 +154,17 @@ open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean
 			.yields()
 
 	init {
+		@Suppress("LeakingThis")
 		register()
 	}
 
 	/**
-	 * if this automatically updates, by calling [invalidate] and [get]
+	 * if this automatically updates, by calling [invalidate] and [state]
 	 */
 	var autoUpdates = true
 	private fun autoUpdatePre() {
 		if (autoUpdates) {
-			get()
+			state
 		}
 	}
 	private fun autoUpdatePost() {
