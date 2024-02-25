@@ -25,7 +25,8 @@ open class EnhancedDoubleSupplier(supplier: Supplier<out Double>, modify: Modifi
 	override fun findErrorAcceleration(target: Double) = target - acceleration
 	override fun findErrorRawAcceleration(target: Double) = target - rawAcceleration
 	override fun <N2> merge(supplier: Supplier<out N2>, merge: (Double, N2) -> Double) = EnhancedDoubleSupplier({ merge(get(), supplier.get()) }, modifier)
-	override fun applyModifier(modify: Modifier<Double>) = EnhancedDoubleSupplier(supplier, modify)
+	override fun applyModifier(modifier: Modifier<Double>) = EnhancedDoubleSupplier(this::position, modifier)
+	override fun setModifier(modifier: Modifier<Double>) = EnhancedDoubleSupplier(supplier, modifier)
 	override fun conditionalBindPosition() = Conditional(this::position)
 	override fun conditionalBindVelocity() = Conditional(this::velocity)
 	override fun conditionalBindVelocityRaw() = Conditional(this::rawVelocity)

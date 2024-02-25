@@ -62,9 +62,22 @@ interface IEnhancedNumericSupplier<N> : Feature {
 	fun <N2> merge(supplier: Supplier<out N2>, merge: (N, N2) -> N): IEnhancedNumericSupplier<N>
 
 	/**
+	 * applies another modifier on top of this supplier
+	 *
 	 * non-mutating
+	 *
+	 * @see setModifier
 	 */
-	fun applyModifier(modify: Modifier<N>): IEnhancedNumericSupplier<N>
+	fun applyModifier(modifier: Modifier<N>): IEnhancedNumericSupplier<N>
+
+	/**
+	 * non-mutating
+	 *
+	 * overrides the previous modifier
+	 *
+	 * @see applyModifier
+	 */
+	fun setModifier(modifier: Modifier<N>): IEnhancedNumericSupplier<N>
 	override fun preUserInitHook(opMode: Wrapper)
 
 	override fun preUserInitLoopHook(opMode: Wrapper)
