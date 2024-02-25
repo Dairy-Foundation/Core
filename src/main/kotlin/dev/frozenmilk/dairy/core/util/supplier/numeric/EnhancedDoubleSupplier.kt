@@ -1,11 +1,12 @@
 package dev.frozenmilk.dairy.core.util.supplier.numeric
 
 import dev.frozenmilk.dairy.core.util.supplier.logical.Conditional
+import dev.frozenmilk.dairy.core.util.supplier.numeric.modifier.Modifier
 import dev.frozenmilk.util.units.getVelocity
 import dev.frozenmilk.util.units.homogenise
 import java.util.function.Supplier
 
-open class EnhancedDoubleSupplier(supplier: Supplier<out Double>, modify: (Double) -> Double = { x -> x }, lowerDeadzone: Double = 0.0, upperDeadzone: Double = 0.0) : EnhancedNumberSupplier<Double>(supplier, modify, lowerDeadzone, upperDeadzone) {
+open class EnhancedDoubleSupplier(supplier: Supplier<out Double>, modify: Modifier<Double> = Modifier { x -> x }) : EnhancedNumericSupplier<Double>(supplier, modify), EnhancedComparableSupplier<Double> {
 	override val velocity get() = previousPositions.homogenise().getVelocity()
 	override val rawVelocity get() = previousPositions.last().getVelocity()
 	override val acceleration get() =previousVelocities.homogenise().getVelocity()
@@ -23,12 +24,8 @@ open class EnhancedDoubleSupplier(supplier: Supplier<out Double>, modify: (Doubl
 	override fun findErrorRawVelocity(target: Double) = target - rawVelocity
 	override fun findErrorAcceleration(target: Double) = target - acceleration
 	override fun findErrorRawAcceleration(target: Double) = target - rawAcceleration
-	override fun <N2> merge(supplier: Supplier<out N2>, merge: (Double, N2) -> Double) = EnhancedDoubleSupplier({ merge(get(), supplier.get()) }, modify, lowerDeadzone, upperDeadzone)
-	override fun applyModifier(modify: (Double) -> Double) = EnhancedDoubleSupplier(supplier, modify, lowerDeadzone, upperDeadzone)
-	override fun applyDeadzone(deadzone: Double) = EnhancedDoubleSupplier(supplier, modify, -deadzone.coerceAtLeast(0.0), deadzone.coerceAtLeast(0.0))
-	override fun applyDeadzone(lowerDeadzone: Double, upperDeadzone: Double) = EnhancedDoubleSupplier(supplier, modify, lowerDeadzone, upperDeadzone)
-	override fun applyLowerDeadzone(lowerDeadzone: Double) = EnhancedDoubleSupplier(supplier, modify, lowerDeadzone, upperDeadzone)
-	override fun applyUpperDeadzone(upperDeadzone: Double) = EnhancedDoubleSupplier(supplier, modify, lowerDeadzone, upperDeadzone)
+	override fun <N2> merge(supplier: Supplier<out N2>, merge: (Double, N2) -> Double) = EnhancedDoubleSupplier({ merge(get(), supplier.get()) }, modifier)
+	override fun applyModifier(modify: Modifier<Double>) = EnhancedDoubleSupplier(supplier, modify)
 	override fun conditionalBindPosition() = Conditional(this::position)
 	override fun conditionalBindVelocity() = Conditional(this::velocity)
 	override fun conditionalBindVelocityRaw() = Conditional(this::rawVelocity)

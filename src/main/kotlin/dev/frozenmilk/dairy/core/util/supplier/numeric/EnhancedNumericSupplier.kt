@@ -1,6 +1,7 @@
 package dev.frozenmilk.dairy.core.util.supplier.numeric
 
 import dev.frozenmilk.dairy.core.dependencyresolution.dependencyset.DependencySet
+import dev.frozenmilk.dairy.core.util.supplier.numeric.modifier.Modifier
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
 import dev.frozenmilk.util.units.VelocityPacket
 import java.util.function.Supplier
@@ -8,7 +9,7 @@ import java.util.function.Supplier
 /**
  * [deregister]s at the end of the OpMode
  */
-abstract class EnhancedNumberSupplier<N: Comparable<N>> @JvmOverloads constructor(override val supplier: Supplier<out N>, override val modify: (N) -> N = { x -> x }, override val lowerDeadzone: N, override val upperDeadzone: N) : IEnhancedNumberSupplier<N> {
+abstract class EnhancedNumericSupplier<N> @JvmOverloads constructor(override val supplier: Supplier<out N>, override val modifier: Modifier<N> = Modifier { x -> x }) : IEnhancedNumericSupplier<N> {
 	/**
 	 * a value that represents 0
 	 */
@@ -36,14 +37,7 @@ abstract class EnhancedNumberSupplier<N: Comparable<N>> @JvmOverloads constructo
 	@Suppress("LeakingThis")
 	protected val previousVelocities = ArrayDeque(listOf(VelocityPacket(zero, zero, System.nanoTime() / 1e9, System.nanoTime() / 1e9)))
 	protected fun update() {
-		var result = modify(supplier.get())
-		if (result < zero && result >= lowerDeadzone) {
-			result = zero
-		}
-		if (result > zero && result <= upperDeadzone) {
-			result = zero
-		}
-		current = result
+		current = modifier.modify(supplier.get())
 		val currentTime = System.nanoTime() / 1e9
 		while (previousPositions.size >= 2 && currentTime - previousPositions[1].deltaTime >= measurementWindow) {
 			previousPositions.removeFirst()

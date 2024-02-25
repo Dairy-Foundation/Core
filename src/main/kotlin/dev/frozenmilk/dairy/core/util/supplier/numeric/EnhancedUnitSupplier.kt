@@ -7,7 +7,7 @@ import dev.frozenmilk.util.units.getVelocity
 import dev.frozenmilk.util.units.homogenise
 import java.util.function.Supplier
 
-open class EnhancedUnitSupplier<U: Unit<U>, RU: ReifiedUnit<U, RU>>(supplier: Supplier<out RU>, modify: (RU) -> RU = { x -> x }, lowerDeadzone: RU = supplier.get().run { this - this }, upperDeadzone: RU = supplier.get().run { this - this }) : EnhancedNumberSupplier<RU>(supplier, modify, lowerDeadzone, upperDeadzone) {
+open class EnhancedUnitSupplier<U: Unit<U>, RU: ReifiedUnit<U, RU>>(supplier: Supplier<out RU>, modify: (RU) -> RU = { x -> x }) : EnhancedNumericSupplier<RU>(supplier, modify), EnhancedComparableSupplier<RU> {
 	final override val zero = supplier.get().run { this - this }
 	override var current = supplier.get()
 	private var offset = zero
@@ -25,12 +25,8 @@ open class EnhancedUnitSupplier<U: Unit<U>, RU: ReifiedUnit<U, RU>>(supplier: Su
 	override fun findErrorRawVelocity(target: RU) = rawVelocity.findError(target)
 	override fun findErrorAcceleration(target: RU) = acceleration.findError(target)
 	override fun findErrorRawAcceleration(target: RU) = rawAcceleration.findError(target)
-	override fun <N2> merge(supplier: Supplier<out N2>, merge: (RU, N2) -> RU) = EnhancedUnitSupplier({ merge(get(), supplier.get()) }, modify, lowerDeadzone, upperDeadzone)
-	override fun applyModifier(modify: (RU) -> RU) = EnhancedUnitSupplier(supplier, modify, lowerDeadzone, upperDeadzone)
-	override fun applyDeadzone(deadzone: RU) = EnhancedUnitSupplier(supplier, modify, -deadzone.coerceAtLeast(zero), deadzone.coerceAtLeast(zero))
-	override fun applyDeadzone(lowerDeadzone: RU, upperDeadzone: RU) = EnhancedUnitSupplier(supplier, modify, lowerDeadzone, upperDeadzone)
-	override fun applyLowerDeadzone(lowerDeadzone: RU) = EnhancedUnitSupplier(supplier, modify, lowerDeadzone, upperDeadzone)
-	override fun applyUpperDeadzone(upperDeadzone: RU) = EnhancedUnitSupplier(supplier, modify, lowerDeadzone, upperDeadzone)
+	override fun <N2> merge(supplier: Supplier<out N2>, merge: (RU, N2) -> RU) = EnhancedUnitSupplier({ merge(get(), supplier.get()) }, modifier)
+	override fun applyModifier(modify: (RU) -> RU) = EnhancedUnitSupplier(supplier, modify)
 	override fun conditionalBindPosition() = Conditional(this::position)
 	override fun conditionalBindVelocity() = Conditional(this::velocity)
 	override fun conditionalBindVelocityRaw() = Conditional(this::rawVelocity)
