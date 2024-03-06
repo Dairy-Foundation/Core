@@ -37,6 +37,7 @@ open class DependencySet internal constructor(internal val feature: Feature, dep
 	 *
 	 * @see [IncludesAtLeastOneOf]
 	 */
+	@SafeVarargs
 	fun includesAtLeastOneOf(vararg flags: Class<out Annotation>): FlagBoundDependencySet {
 		return FlagBoundDependencySet(withDependency(IncludesAtLeastOneOf(feature, *flags)))
 	}
@@ -46,6 +47,7 @@ open class DependencySet internal constructor(internal val feature: Feature, dep
 	 *
 	 * @see [IncludesExactlyOneOf]
 	 */
+	@SafeVarargs
 	fun includesExactlyOneOf(vararg flags: Class<out Annotation>): IndividualFlagBoundDependencySet {
 		return IndividualFlagBoundDependencySet(withDependency(IncludesExactlyOneOf(feature, *flags)))
 	}
@@ -55,6 +57,7 @@ open class DependencySet internal constructor(internal val feature: Feature, dep
 	 *
 	 * @see [ExcludesFlags]
 	 */
+	@SafeVarargs
 	fun excludesFlags(vararg flags: Class<out Annotation>): FlagBoundDependencySet {
 		return FlagBoundDependencySet(withDependency(ExcludesFlags(feature, *flags)))
 	}
@@ -64,6 +67,7 @@ open class DependencySet internal constructor(internal val feature: Feature, dep
 	 *
 	 * @see [DependsOnOneOf]
 	 */
+	@SafeVarargs
 	fun dependsOnOneOf(vararg features: Class<out Feature>): SingleFeatureDependencySet {
 		return SingleFeatureDependencySet(withDependency(DependsOnOneOf(feature, *features)))
 	}
@@ -73,6 +77,7 @@ open class DependencySet internal constructor(internal val feature: Feature, dep
 	 *
 	 * @see [DependsOnOneOf]
 	 */
+	@SafeVarargs
 	fun mutuallyExclusiveWith(vararg features: Class<out Feature>): FeatureBoundDependencySet {
 		return FeatureBoundDependencySet(withDependency(MutuallyExclusiveWith(feature, *features)))
 	}
@@ -91,6 +96,7 @@ open class DependencySet internal constructor(internal val feature: Feature, dep
 	 *
 	 * @see [YieldsTo]
 	 */
+	@SafeVarargs
 	fun yieldsTo(vararg features: Class<out Feature>): YieldsToFeatureBoundDependencySet {
 		return YieldsToFeatureBoundDependencySet(withDependency(YieldsTo(feature, *features)))
 	}
@@ -100,6 +106,7 @@ open class DependencySet internal constructor(internal val feature: Feature, dep
 	 *
 	 * @see [DependsDirectlyOn]
 	 */
+	@SafeVarargs
 	fun dependsDirectlyOn(vararg features: Feature): YieldsToFeatureBoundDependencySet {
 		return YieldsToFeatureBoundDependencySet(withDependency(DependsDirectlyOn(feature, *features)))
 	}
