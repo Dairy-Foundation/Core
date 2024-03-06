@@ -3,60 +3,68 @@ package dev.frozenmilk.dairy.core.util.supplier.logical
 import org.jetbrains.annotations.Contract
 import java.util.function.Supplier
 
-class Conditional<T: Comparable<T>> (private val supplier: Supplier<T>) {
-	private val domainCheckers: ArrayList<(T) -> Boolean> = ArrayList(1)
-	private var domainClosureBuilder = DomainClosureBuilder<T>()
-	private var previousOperationType: OperationType? = null
+class Conditional<T: Comparable<T>> private constructor(private val supplier: Supplier<T>, private val domainCheckers: List<(T) -> Boolean> = emptyList(), private val domainClosureBuilder: DomainClosureBuilder<T> = DomainClosureBuilder(), private val previousOperationType: OperationType? = null) : IConditional<T> {
+	constructor(supplier: Supplier<T>) : this(supplier, emptyList())
+
 
 	/**
-	 * @return self, for chaining
+	 * non-mutating
 	 */
-	fun lessThan(value: T): Conditional<T> {
-		handleBuildState(OperationType.LESS, Inclusivity.NOT_INCLUSIVE, value)
+	override fun lessThan(value: T): Conditional<T> {
+		val pair = handleBuildState(OperationType.LESS, Inclusivity.NOT_INCLUSIVE, value)
+		var domainClosureBuilder = pair.first
 		domainClosureBuilder = domainClosureBuilder.lessThan(value)
-		return this
+		val domainCheckers = pair.second
+		return Conditional(supplier, domainCheckers, domainClosureBuilder, OperationType.LESS)
 	}
 
 	/**
-	 * @return self, for chaining
+	 * non-mutating
 	 */
-	fun lessThanEqualTo(value: T): Conditional<T> {
-		handleBuildState(OperationType.LESS, Inclusivity.INCLUSIVE, value)
+	override fun lessThanEqualTo(value: T): Conditional<T> {
+		val pair = handleBuildState(OperationType.LESS, Inclusivity.INCLUSIVE, value)
+		var domainClosureBuilder = pair.first
 		domainClosureBuilder = domainClosureBuilder.lessThanEqualTo(value)
-		return this
+		val domainCheckers = pair.second
+		return Conditional(supplier, domainCheckers, domainClosureBuilder, OperationType.LESS)
 	}
 
 	/**
-	 * @return self, for chaining
+	 * non-mutating
 	 */
-	fun greaterThan(value: T): Conditional<T> {
-		handleBuildState(OperationType.GREATER, Inclusivity.NOT_INCLUSIVE, value)
+	override fun greaterThan(value: T): Conditional<T> {
+		val pair = handleBuildState(OperationType.GREATER, Inclusivity.NOT_INCLUSIVE, value)
+		var domainClosureBuilder = pair.first
 		domainClosureBuilder = domainClosureBuilder.greaterThan(value)
-		return this
+		val domainCheckers = pair.second
+		return Conditional(supplier, domainCheckers, domainClosureBuilder, OperationType.GREATER)
 	}
 	// when we do a new operation, check to see if it can form a valid closure with the previous operation, if so, perform the closure union, else, close the previous closure and add this one in
 	// closes if upper > lower
 	// only need to check if we currently already have one domain set
 	/**
-	 * @return self, for chaining
+	 * non-mutating
 	 */
-	fun greaterThanEqualTo(value: T): Conditional<T> {
-		handleBuildState(OperationType.GREATER, Inclusivity.INCLUSIVE, value)
+	override fun greaterThanEqualTo(value: T): Conditional<T> {
+		val pair = handleBuildState(OperationType.GREATER, Inclusivity.INCLUSIVE, value)
+		var domainClosureBuilder = pair.first
 		domainClosureBuilder = domainClosureBuilder.greaterThanEqualTo(value)
-		return this
+		val domainCheckers = pair.second
+		return Conditional(supplier, domainCheckers, domainClosureBuilder, OperationType.GREATER)
 	}
 
-	fun bind(): EnhancedBooleanSupplier {
+	override fun bind(): EnhancedBooleanSupplier {
+		var conditional = this
 		if (domainClosureBuilder.valid()) {
-			domainCheckers.add(domainClosureBuilder.build())
+			conditional = Conditional(supplier, domainCheckers.plus(domainClosureBuilder.build()), domainClosureBuilder, previousOperationType)
 		}
 
 		// todo simplify domain checkers by checking their extremes and seeing if one entirely contains another or if two could be merged?
 		// doesn't matter for the moment, but very plausible for later
 		return EnhancedBooleanSupplier {
 			var result = false
-			for (domainChecker in domainCheckers) {
-				result = result or domainChecker.invoke(supplier.get())
+			for (domainChecker in conditional.domainCheckers) {
+				result = result or domainChecker.invoke(conditional.supplier.get())
 			}
 			result
 		}
@@ -67,12 +75,12 @@ class Conditional<T: Comparable<T>> (private val supplier: Supplier<T>) {
 	// * we already have one value loaded in there AND:
 	// * the new value doesn't close, so we actually want inverse values, which we achieve by building the previous value and letting the user continue to cook
 	// * OTHERWISE: if the new value DOES close, we add it and then run a build
-	private fun handleBuildState(operationType: OperationType, inclusivity: Inclusivity, newValue: T) {
+	private fun handleBuildState(operationType: OperationType, inclusivity: Inclusivity, newValue: T): Pair<DomainClosureBuilder<T>, List<(T) -> Boolean>> {
+		var result = domainClosureBuilder to domainCheckers
 		if (previousOperationType == operationType || domainClosureBuilder.handleBuildState(newValue, operationType, inclusivity.isInclusive)) {
-			domainCheckers.add(domainClosureBuilder.build())
-			domainClosureBuilder = DomainClosureBuilder()
+			result = DomainClosureBuilder<T>() to domainCheckers.plus(domainClosureBuilder.build())
 		}
-		previousOperationType = operationType
+		return result
 	}
 }
 internal enum class OperationType {

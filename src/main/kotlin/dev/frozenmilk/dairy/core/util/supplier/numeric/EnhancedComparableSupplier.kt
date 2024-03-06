@@ -1,11 +1,11 @@
 package dev.frozenmilk.dairy.core.util.supplier.numeric
 
-import dev.frozenmilk.dairy.core.util.supplier.logical.Conditional
+import dev.frozenmilk.dairy.core.util.supplier.logical.IConditional
 
-interface EnhancedComparableSupplier<T: Comparable<T>> {
-	fun conditionalBindPosition(): Conditional<T>
-	fun conditionalBindVelocity(): Conditional<T>
-	fun conditionalBindVelocityRaw(): Conditional<T>
-	fun conditionalBindAcceleration(): Conditional<T>
-	fun conditionalBindAccelerationRaw(): Conditional<T>
+interface EnhancedComparableSupplier<T: Comparable<T>, CONDITIONAL: IConditional<T>> {
+	fun conditionalBindPosition(): CONDITIONAL
+	fun conditionalBindVelocity(): CONDITIONAL
+	fun conditionalBindVelocityRaw(): CONDITIONAL
+	fun conditionalBindAcceleration(): CONDITIONAL
+	fun conditionalBindAccelerationRaw(): CONDITIONAL
 }

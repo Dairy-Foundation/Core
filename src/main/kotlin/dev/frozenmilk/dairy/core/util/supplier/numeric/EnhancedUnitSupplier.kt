@@ -1,14 +1,15 @@
 package dev.frozenmilk.dairy.core.util.supplier.numeric
 
 import dev.frozenmilk.dairy.core.util.supplier.logical.Conditional
-import dev.frozenmilk.dairy.core.util.supplier.numeric.modifier.Modifier
+import dev.frozenmilk.dairy.core.util.supplier.logical.IConditional
+import dev.frozenmilk.util.modifier.Modifier
 import dev.frozenmilk.util.units.ReifiedUnit
 import dev.frozenmilk.util.units.Unit
 import dev.frozenmilk.util.units.getVelocity
 import dev.frozenmilk.util.units.homogenise
 import java.util.function.Supplier
 
-open class EnhancedUnitSupplier<U: Unit<U>, RU: ReifiedUnit<U, RU>>(supplier: Supplier<out RU>, modifier: Modifier<RU> = Modifier { x -> x }) : EnhancedNumericSupplier<RU>(supplier, modifier), EnhancedComparableSupplier<RU> {
+open class EnhancedUnitSupplier<U: Unit<U>, RU: ReifiedUnit<U, RU>>(supplier: Supplier<out RU>, modifier: Modifier<RU> = Modifier { x -> x }) : EnhancedNumericSupplier<RU>(supplier, modifier), EnhancedComparableSupplier<RU, IConditional<RU>> {
 	final override val zero = supplier.get().run { this - this }
 	override var current = supplier.get()
 	private var offset = zero

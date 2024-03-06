@@ -1,12 +1,13 @@
 package dev.frozenmilk.dairy.core.util.supplier.numeric
 
 import dev.frozenmilk.dairy.core.util.supplier.logical.Conditional
-import dev.frozenmilk.dairy.core.util.supplier.numeric.modifier.Modifier
+import dev.frozenmilk.dairy.core.util.supplier.logical.IConditional
+import dev.frozenmilk.util.modifier.Modifier
 import dev.frozenmilk.util.units.getVelocity
 import dev.frozenmilk.util.units.homogenise
 import java.util.function.Supplier
 
-open class EnhancedDoubleSupplier(supplier: Supplier<out Double>, modify: Modifier<Double> = Modifier { x -> x }) : EnhancedNumericSupplier<Double>(supplier, modify), EnhancedComparableSupplier<Double> {
+open class EnhancedDoubleSupplier(supplier: Supplier<out Double>, modify: Modifier<Double> = Modifier { x -> x }) : EnhancedNumericSupplier<Double>(supplier, modify), EnhancedComparableSupplier<Double, IConditional<Double>> {
 	override val velocity get() = previousPositions.homogenise().getVelocity()
 	override val rawVelocity get() = previousPositions.last().getVelocity()
 	override val acceleration get() =previousVelocities.homogenise().getVelocity()

@@ -1,21 +1,19 @@
 package dev.frozenmilk.dairy.core.util.supplier.logical
 
-import dev.frozenmilk.dairy.core.Feature
-import dev.frozenmilk.dairy.core.FeatureRegistrar
 import dev.frozenmilk.dairy.core.dependencyresolution.dependencyset.DependencySet
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
 import java.util.function.Supplier
 
-open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, private val risingDebounce: Long, private val fallingDebounce: Long) : Feature{
+open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, private val risingDebounce: Long, private val fallingDebounce: Long) : IEnhancedBooleanSupplier {
 	constructor(booleanSupplier: Supplier<Boolean>) : this(booleanSupplier, 0, 0)
 	private var previous = booleanSupplier.get()
-	private var current = booleanSupplier.get()
-	@get:JvmName("toggleTrue")
-	var toggleTrue = booleanSupplier.get()
-		private set
-	@get:JvmName("toggleFalse")
-	var toggleFalse = booleanSupplier.get()
-		private set
+	private var current = previous
+	private var _toggleTrue = current
+	override val toggleTrue
+		get() = _toggleTrue
+	private var _toggleFalse = current
+	override val toggleFalse
+		get() = _toggleFalse
 	private var timeMarker = 0L
 	private fun update() {
 		previous = current
@@ -23,14 +21,14 @@ open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean
 		if(!current && booleanSupplier.get()){
 			if(time - timeMarker > risingDebounce) {
 				current = true
-				toggleTrue = !toggleTrue
+				_toggleTrue = !_toggleTrue
 				timeMarker = time
 			}
 		}
 		else if (current && !booleanSupplier.get()) {
 			if (time - timeMarker > fallingDebounce) {
 				current = false
-				toggleFalse = !toggleFalse
+				_toggleFalse = !_toggleFalse
 				timeMarker = time
 			}
 		}
@@ -44,15 +42,14 @@ open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean
 	/**
 	 * causes the next call to [get] to update this supplier
 	 */
-	fun invalidate() {
+	override fun invalidate() {
 		valid = false
 	}
 
 	/**
 	 * returns the current boolean state of this
 	 */
-	@get:JvmName("state")
-	val state: Boolean get() {
+	override val state: Boolean get() {
 		if (!valid) {
 			update()
 			valid = true
@@ -63,21 +60,19 @@ open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean
 	/**
 	 * a rising edge detector for this
 	 */
-	@get:JvmName("onTrue")
-	val onTrue: Boolean get() { return state && !previous }
+	override val onTrue: Boolean get() { return state && !previous }
 
 	/**
 	 * a falling edge detector for this
 	 */
-	@get:JvmName("onFalse")
-	val onFalse: Boolean get() { return !state && previous }
+	override val onFalse: Boolean get() { return !state && previous }
 
 	/**
 	 * non-mutating
 	 *
 	 * @param debounce is applied to both the rising and falling edges
 	 */
-	fun debounce(debounce: Double) = EnhancedBooleanSupplier(this.booleanSupplier, (debounce * 1E9).toLong(), (debounce * 1E9).toLong())
+	override fun debounce(debounce: Double) = EnhancedBooleanSupplier(this.booleanSupplier, (debounce * 1E9).toLong(), (debounce * 1E9).toLong())
 
 	/**
 	 * non-mutating
@@ -85,71 +80,72 @@ open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean
 	 * @param rising is applied to the rising edge
 	 * @param falling is applied to the falling edge
 	 */
-	fun debounce(rising: Double, falling: Double) = EnhancedBooleanSupplier(this.booleanSupplier, (rising * 1E9).toLong(), (falling * 1E9).toLong())
+	override fun debounce(rising: Double, falling: Double) = EnhancedBooleanSupplier(this.booleanSupplier, (rising * 1E9).toLong(), (falling * 1E9).toLong())
 
 	/**
 	 * non-mutating
 	 *
 	 * @param debounce is applied to the rising edge
 	 */
-	fun debounceRisingEdge(debounce: Double) = EnhancedBooleanSupplier(this.booleanSupplier, (debounce * 1E9).toLong(), this.fallingDebounce)
+	override fun debounceRisingEdge(debounce: Double) = EnhancedBooleanSupplier(this.booleanSupplier, (debounce * 1E9).toLong(), this.fallingDebounce)
 
 	/**
 	 * non-mutating
 	 *
 	 * @param debounce is applied to the falling edge
 	 */
-	fun debounceFallingEdge(debounce: Double) = EnhancedBooleanSupplier(this.booleanSupplier, this.risingDebounce, (debounce * 1E9).toLong())
+	override fun debounceFallingEdge(debounce: Double) = EnhancedBooleanSupplier(this.booleanSupplier, this.risingDebounce, (debounce * 1E9).toLong())
 
 	/**
 	 * non-mutating
 	 *
 	 * @return a new EnhancedBooleanSupplier that combines the two conditions
 	 */
-	infix fun and(booleanSupplier: Supplier<Boolean>) = EnhancedBooleanSupplier { this.state and booleanSupplier.get() }
+	override infix fun and(booleanSupplier: Supplier<Boolean>) = EnhancedBooleanSupplier { this.state and booleanSupplier.get() }
 	/**
 	 * non-mutating
 	 *
 	 * @return a new EnhancedBooleanSupplier that combines the two conditions
 	 */
-	infix fun and(booleanSupplier: EnhancedBooleanSupplier) = EnhancedBooleanSupplier { this.state and booleanSupplier.state }
+	override infix fun and(booleanSupplier: IEnhancedBooleanSupplier) = EnhancedBooleanSupplier { this.state and booleanSupplier.state }
 
 	/**
 	 * non-mutating
 	 *
 	 * @return a new EnhancedBooleanSupplier that combines the two conditions
 	 */
-	infix fun or(booleanSupplier: Supplier<Boolean>) = EnhancedBooleanSupplier { this.state or booleanSupplier.get() }
+	override infix fun or(booleanSupplier: Supplier<Boolean>) = EnhancedBooleanSupplier { this.state or booleanSupplier.get() }
 	/**
 	 * non-mutating
 	 *
 	 * @return a new EnhancedBooleanSupplier that combines the two conditions
 	 */
-	infix fun or(booleanSupplier: EnhancedBooleanSupplier) = EnhancedBooleanSupplier { this.state or booleanSupplier.state }
+	override infix fun or(booleanSupplier: IEnhancedBooleanSupplier) = EnhancedBooleanSupplier { this.state or booleanSupplier.state }
 
 	/**
 	 * non-mutating
 	 *
 	 * @return a new EnhancedBooleanSupplier that combines the two conditions
 	 */
-	infix fun xor(booleanSupplier: Supplier<Boolean>) = EnhancedBooleanSupplier { this.state xor booleanSupplier.get() }
+	override infix fun xor(booleanSupplier: Supplier<Boolean>) = EnhancedBooleanSupplier { this.state xor booleanSupplier.get() }
 	/**
 	 * non-mutating
 	 *
 	 * @return a new EnhancedBooleanSupplier that combines the two conditions
 	 */
-	infix fun xor(booleanSupplier: EnhancedBooleanSupplier) = EnhancedBooleanSupplier { this.state xor booleanSupplier.state }
+	override infix fun xor(booleanSupplier: IEnhancedBooleanSupplier) = EnhancedBooleanSupplier { this.state xor booleanSupplier.state }
 
 	/**
 	 * non-mutating
 	 *
 	 * @return a new EnhancedBooleanSupplier that has the inverse of this, and keeps the debounce information
 	 */
-	operator fun not() = EnhancedBooleanSupplier ({ !this.booleanSupplier.get() }, risingDebounce, fallingDebounce)
+	override operator fun not() = EnhancedBooleanSupplier ({ !this.booleanSupplier.get() }, risingDebounce, fallingDebounce)
 
 	//
 	// Impl Feature:
 	//
+	@Suppress("LeakingThis")
 	override val dependencies = DependencySet(this)
 			.yields()
 
@@ -161,7 +157,7 @@ open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean
 	/**
 	 * if this automatically updates, by calling [invalidate] and [state]
 	 */
-	var autoUpdates = true
+	override var autoUpdates = true
 	private fun autoUpdatePre() {
 		if (autoUpdates) {
 			state
