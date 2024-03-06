@@ -43,4 +43,6 @@ interface Feature {
 	fun register(): Feature { return also { FeatureRegistrar.registerFeature(this) } }
 
 	fun deregister(): Feature { return also { FeatureRegistrar.deregisterFeature(this) } }
+
+	fun isAttached() = FeatureRegistrar.isAttached(this)
 }
