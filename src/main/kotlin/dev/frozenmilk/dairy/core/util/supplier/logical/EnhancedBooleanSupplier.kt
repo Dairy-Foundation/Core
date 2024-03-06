@@ -3,15 +3,17 @@ package dev.frozenmilk.dairy.core.util.supplier.logical
 import dev.frozenmilk.dairy.core.dependencyresolution.dependencyset.DependencySet
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
 import java.util.function.Supplier
-
+@Suppress("INAPPLICABLE_JVM_NAME")
 open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, private val risingDebounce: Long, private val fallingDebounce: Long) : IEnhancedBooleanSupplier {
 	constructor(booleanSupplier: Supplier<Boolean>) : this(booleanSupplier, 0, 0)
 	private var previous = booleanSupplier.get()
 	private var current = previous
 	private var _toggleTrue = current
+	@get:JvmName("toggleTrue")
 	override val toggleTrue
 		get() = _toggleTrue
 	private var _toggleFalse = current
+	@get:JvmName("toggleFalse")
 	override val toggleFalse
 		get() = _toggleFalse
 	private var timeMarker = 0L
@@ -49,6 +51,7 @@ open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean
 	/**
 	 * returns the current boolean state of this
 	 */
+	@get:JvmName("state")
 	override val state: Boolean get() {
 		if (!valid) {
 			update()
@@ -60,11 +63,13 @@ open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean
 	/**
 	 * a rising edge detector for this
 	 */
+	@get:JvmName("onTrue")
 	override val onTrue: Boolean get() { return state && !previous }
 
 	/**
 	 * a falling edge detector for this
 	 */
+	@get:JvmName("onFalse")
 	override val onFalse: Boolean get() { return !state && previous }
 
 	/**
