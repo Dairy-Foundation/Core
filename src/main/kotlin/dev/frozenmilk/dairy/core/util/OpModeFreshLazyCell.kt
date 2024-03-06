@@ -1,5 +1,7 @@
-package dev.frozenmilk.dairy.core
+package dev.frozenmilk.dairy.core.util
 
+import dev.frozenmilk.dairy.core.Feature
+import dev.frozenmilk.dairy.core.FeatureRegistrar
 import dev.frozenmilk.dairy.core.dependencyresolution.dependencies.Dependency
 import dev.frozenmilk.dairy.core.dependencyresolution.dependencyset.DependencySet
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
