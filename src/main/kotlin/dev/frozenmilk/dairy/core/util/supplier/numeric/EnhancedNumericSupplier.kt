@@ -32,10 +32,8 @@ abstract class EnhancedNumericSupplier<N> @JvmOverloads constructor(override val
 	override fun invalidate() {
 		valid = false
 	}
-	@Suppress("LeakingThis")
-	protected val previousPositions = ArrayDeque(listOf(VelocityPacket(position, position, System.nanoTime() / 1e9, System.nanoTime() / 1e9)))
-	@Suppress("LeakingThis")
-	protected val previousVelocities = ArrayDeque(listOf(VelocityPacket(zero, zero, System.nanoTime() / 1e9, System.nanoTime() / 1e9)))
+	protected val previousPositions by lazy { ArrayDeque(listOf(VelocityPacket(current, current, System.nanoTime() / 1e9, System.nanoTime() / 1e9))) }
+	protected val previousVelocities by lazy { ArrayDeque(listOf(VelocityPacket(zero, zero, System.nanoTime() / 1e9, System.nanoTime() / 1e9))) }
 	protected fun update() {
 		current = modifier.modify(supplier.get())
 		val currentTime = System.nanoTime() / 1e9
@@ -76,9 +74,10 @@ abstract class EnhancedNumericSupplier<N> @JvmOverloads constructor(override val
 	//
 	// Impl Feature:
 	//
-	@Suppress("LeakingThis")
-	override val dependencies = DependencySet(this)
-			.yields()
+	override val dependencies by lazy {
+		DependencySet(this)
+				.yields()
+	}
 
 	init {
 		@Suppress("LeakingThis")

@@ -9,3 +9,5 @@ interface EnhancedComparableSupplier<T: Comparable<T>, CONDITIONAL: IConditional
 	fun conditionalBindAcceleration(): CONDITIONAL
 	fun conditionalBindAccelerationRaw(): CONDITIONAL
 }
+
+interface EnhancedComparableNumericSupplier<T: Comparable<T>, CONDITIONAL: IConditional<T>> : EnhancedComparableSupplier<T, CONDITIONAL>, IEnhancedNumericSupplier<T>

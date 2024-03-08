@@ -3,8 +3,12 @@ package dev.frozenmilk.dairy.core.util.supplier.logical
 import dev.frozenmilk.dairy.core.dependencyresolution.dependencyset.DependencySet
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
 import java.util.function.Supplier
+
+/**
+ * [deregister]s at the end of an OpMode
+ */
 @Suppress("INAPPLICABLE_JVM_NAME")
-open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, private val risingDebounce: Long, private val fallingDebounce: Long) : IEnhancedBooleanSupplier {
+class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, private val risingDebounce: Long, private val fallingDebounce: Long) : IEnhancedBooleanSupplier {
 	constructor(booleanSupplier: Supplier<Boolean>) : this(booleanSupplier, 0, 0)
 	private var previous = booleanSupplier.get()
 	private var current = previous
@@ -150,12 +154,10 @@ open class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean
 	//
 	// Impl Feature:
 	//
-	@Suppress("LeakingThis")
 	override val dependencies = DependencySet(this)
 			.yields()
 
 	init {
-		@Suppress("LeakingThis")
 		register()
 	}
 
