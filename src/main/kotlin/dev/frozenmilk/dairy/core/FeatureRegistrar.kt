@@ -105,6 +105,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		if (registrationQueue.isEmpty()) return
 		registrationQueue.filter { !it.second }
 				.forEach { (feature, _) ->
+					RobotLog.vv(TAG, "Deactivating Feature: ${feature::class.java.simpleName}")
 					activeFeatures.remove(feature.get())
 					registeredFeatures.remove(
 							registeredFeatures.first {
@@ -117,6 +118,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 				activeFeatures.toSet(),
 				activeFlags
 		).second.forEach {
+			RobotLog.vv(TAG, "Activating Feature: ${it::class.java.simpleName}")
 			activeFeatures.add(it)
 		}
 		registrationQueue.clear()
@@ -154,7 +156,6 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 			RobotLog.vv(TAG, "Previously attached to an OpModeManager, detaching...")
 			it.unregisterListener(this)
 		}
-		RobotLog.vv(TAG, ftcEventLoop.opModeManager.toString())
 		opModeManager = ftcEventLoop.opModeManager
 		activeOpModeMirroredCell.invalidate()
 		RobotLog.vv(TAG, "Attaching to an OpModeManager")
