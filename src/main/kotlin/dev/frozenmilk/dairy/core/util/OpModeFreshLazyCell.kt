@@ -10,6 +10,11 @@ import java.util.function.Supplier
 
 /**
  * A [LazyCell] that is invalidated and initialised on the init of an OpMode
+ *
+ * unlike an [OpModeLazyCell], this is suitable for use in a persistent context,
+ * where this shouldn't automatically deregister
+ *
+ * @see OpModeLazyCell for use in an op mode
  */
 class OpModeFreshLazyCell<T>(supplier: Supplier<T>) : LazyCell<T>(supplier), Feature {
     override val dependencies: Set<Dependency<*, *>> = DependencySet(this)
