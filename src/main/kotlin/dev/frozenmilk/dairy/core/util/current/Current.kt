@@ -10,7 +10,9 @@ import kotlin.math.sqrt
 /**
  * common unit is [CurrentUnits.AMP]
  */
-interface CurrentUnit : Unit<CurrentUnit>
+interface CurrentUnit : Unit<CurrentUnit> {
+	override fun common() = CurrentUnits.AMP
+}
 
 enum class CurrentUnits(val sdkUnit: org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit, override val toCommonRatio: Double) : CurrentUnit {
 	AMP(org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit.AMPS, 1.0),
