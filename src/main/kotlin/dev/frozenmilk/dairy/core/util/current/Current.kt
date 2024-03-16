@@ -65,3 +65,15 @@ class Current(unit: CurrentUnit, value: Double = 0.0) : ReifiedUnit<CurrentUnit,
 fun Supplier<out Current>.into(unit: CurrentUnit) = Supplier { get().into(unit) }
 fun Supplier<out Current>.intoAmps() = Supplier { get().intoAmps() }
 fun Supplier<out Current>.intoMilliAmps() = Supplier { get().intoMilliAmps() }
+
+val Double.amps
+	get() = Current(CurrentUnits.AMP, this)
+
+val Int.amps
+	get() = this.toDouble().amps
+
+val Double.milliAmps
+	get() = Current(CurrentUnits.MILLI_AMP, this)
+
+val Int.milliAmps
+	get() = this.toDouble().milliAmps
