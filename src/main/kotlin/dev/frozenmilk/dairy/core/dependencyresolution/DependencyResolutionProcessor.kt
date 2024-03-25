@@ -98,8 +98,8 @@ fun resolveDependencies(unresolvedFeatures: Collection<Feature>, currentlyActive
 
 					is DependsDirectlyOn -> {
 						try {
-							val resolutionResult = it.resolvesOrError(currentlyActiveFeatures)
-							if(resolutionResult.first) it.acceptResolutionOutput(resolutionResult.second)
+							val resolutionResult = it.resolvesOrError(currentlyActiveFeatures + resolvedOrder)
+							if (resolutionResult.first) it.acceptResolutionOutput(resolutionResult.second)
 							resolutionPair.resolves and resolutionResult.first
 						} catch (e: FeatureDependencyResolutionFailureException) {
 							exceptions.add(e)
