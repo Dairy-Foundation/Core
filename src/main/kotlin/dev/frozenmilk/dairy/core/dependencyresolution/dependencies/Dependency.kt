@@ -112,7 +112,7 @@ class IncludesExactlyOneOf(override val feature: Feature, vararg val flags: Clas
 		return outcome to (result ?: False()) // returns a dummy annotation if result was never found
 	}
 
-	override val failures: MutableSet<String> = mutableSetOf();
+	override val failures: MutableSet<String> = mutableSetOf()
 	override val dependencyResolutionFailureMessage: String
 		get() {
 			if(failures.isEmpty()) {
@@ -140,8 +140,8 @@ class IncludesExactlyOneOf(override val feature: Feature, vararg val flags: Clas
 class Yields(override val feature: Feature) : Dependency<Any?, Boolean> {
 	override fun resolves(args: Boolean): Pair<Boolean, Any?> = args to null
 
-	override val failures: Collection<String> = emptyList();
-	override val dependencyResolutionFailureMessage: String = "failed to yield";
+	override val failures: Collection<String> = emptyList()
+	override val dependencyResolutionFailureMessage: String = "failed to yield"
 	override fun validateContents() {}
 
 	override var outputRef: Consumer<Any?>? = null // never set to anything else
@@ -179,7 +179,7 @@ class YieldsTo(override val feature: Feature, private vararg val features: Class
 	override var outputRef: Consumer<Collection<Feature>>? = null
 }
 
-class DependsDirectlyOn(override val feature: Feature, private vararg  val features: Feature) : Dependency<Collection<Feature>, Collection<Feature>> {
+class DependsDirectlyOn(override val feature: Feature, private vararg val features: Feature) : Dependency<Collection<Feature>, Collection<Feature>> {
 	override fun resolves(args: Collection<Feature>): Pair<Boolean, Collection<Feature>> {
 		var resolves = true
 		features.forEach {
@@ -188,7 +188,7 @@ class DependsDirectlyOn(override val feature: Feature, private vararg  val featu
 			if (!found) failures.add("unable to find feature of type: ${feature.javaClass.simpleName}")
 		}
 		// args is only used if we resolved
-		return resolves to args
+		return resolves to features.toList()
 	}
 
 	override val failures: MutableList<String> = mutableListOf()

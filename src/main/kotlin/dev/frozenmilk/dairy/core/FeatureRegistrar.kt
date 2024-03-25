@@ -14,10 +14,10 @@ import dev.frozenmilk.dairy.core.dependencyresolution.resolveDependencies
 import dev.frozenmilk.dairy.core.wrapper.LinearOpModeWrapper
 import dev.frozenmilk.dairy.core.wrapper.OpModeWrapper
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
+import dev.frozenmilk.sinister.apphooks.OnCreateEventLoop
 import dev.frozenmilk.util.cell.LateInitCell
 import dev.frozenmilk.util.cell.LazyCell
 import dev.frozenmilk.util.cell.MirroredCell
-import org.firstinspires.ftc.ftccommon.external.OnCreateEventLoop
 import org.firstinspires.ftc.robotcore.internal.opmode.RegisteredOpModes
 import java.lang.ref.WeakReference
 import java.util.ArrayDeque
@@ -125,13 +125,13 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	}
 
 	/**
-	 * ensures that each feature is currently activated, if not, will through a descriptive error about why it isn't
+	 * ensures that each feature is currently activated, if not, will throw a descriptive error about why it isn't
 	 *
 	 * an optional dependency resolution diagnostic tool
 	 */
 	@JvmStatic
 	fun checkFeatures(opMode: OpMode, vararg features: Feature) {
-		val resolved = resolveDependencies(features.toList(), activeFeatures.toSet(), opMode.javaClass.annotations.toList()).first
+		val resolved = resolveDependencies(features.toList(), activeFeatures.toSet(), opMode::class.java.annotations.toList()).first
 		// throws all the exceptions it came across in one giant message, if we find any
 		if (!features.all { resolved[it].isNullOrEmpty() }) {
 			throw DependencyResolutionFailureException(resolved.values.fold(Exception("")) { exception: Exception, featureDependencyResolutionFailureExceptions: Set<FeatureDependencyResolutionFailureException> ->
@@ -146,20 +146,21 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	private var opModeManager by opModeManagerCell
 
 	/**
-	 * registers this instance against the event loop, automatically called by the FtcEventLoop, should not be called by the user
+	 * registers this instance against the event loop, automatically called by the FtcEventLoop
 	 */
-	@OnCreateEventLoop
-	@JvmStatic
-	fun registerSelf(@Suppress("UNUSED_PARAMETER") context: Context, ftcEventLoop: FtcEventLoop) {
-		RobotLog.vv(TAG, "Registering self with event loop")
-		opModeManagerCell.safeInvoke {
-			RobotLog.vv(TAG, "Previously attached to an OpModeManager, detaching...")
-			it.unregisterListener(this)
+	@Suppress("unused")
+	private object OnCreateEventLoopHook : OnCreateEventLoop {
+		override fun onCreateEventLoop(context: Context, ftcEventLoop: FtcEventLoop) {
+			RobotLog.vv(TAG, "Registering self with event loop")
+			opModeManagerCell.safeInvoke {
+				RobotLog.vv(TAG, "Previously attached to an OpModeManager, detaching...")
+				it.unregisterListener(FeatureRegistrar)
+			}
+			opModeManager = ftcEventLoop.opModeManager
+			activeOpModeMirroredCell.invalidate()
+			RobotLog.vv(TAG, "Attaching to an OpModeManager")
+			opModeManager.registerListener(FeatureRegistrar)
 		}
-		opModeManager = ftcEventLoop.opModeManager
-		activeOpModeMirroredCell.invalidate()
-		RobotLog.vv(TAG, "Attaching to an OpModeManager")
-		opModeManager.registerListener(this)
 	}
 
 	private fun cleanFeatures() {

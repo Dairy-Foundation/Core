@@ -42,7 +42,7 @@ dependencies {
 	testImplementation("org.testng:testng:6.9.6")
 
 	api(project(":Util"))
-	implementation(project(":Sinister"))
+	api(project(":Sinister"))
 
 	compileOnly("org.firstinspires.ftc:RobotCore:9.0.1")
 	compileOnly("org.firstinspires.ftc:Hardware:9.0.1")
