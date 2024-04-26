@@ -2,7 +2,6 @@ package dev.frozenmilk.dairy.core.util.supplier.numeric
 
 import dev.frozenmilk.dairy.core.Feature
 import dev.frozenmilk.util.modifier.Modifier
-import dev.frozenmilk.dairy.core.wrapper.Wrapper
 import java.util.function.Supplier
 
 interface IEnhancedNumericSupplier<N> : Feature {

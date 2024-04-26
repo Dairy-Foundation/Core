@@ -9,9 +9,9 @@ import java.util.function.Supplier
 class EnhancedDoubleSupplier(supplier: Supplier<out Double>, modify: Modifier<Double> = Modifier { x -> x }) : EnhancedNumericSupplier<Double>(supplier, modify), EnhancedComparableNumericSupplier<Double, Conditional<Double>> {
 	override val velocity get() = previousPositions.homogenise().getVelocity()
 	override val rawVelocity get() = previousPositions.last().getVelocity()
-	override val acceleration get() =previousVelocities.homogenise().getVelocity()
-	override val rawAcceleration get() =previousVelocities.last().getVelocity()
-	final override val zero = 0.0
+	override val acceleration get() = previousVelocities.homogenise().getVelocity()
+	override val rawAcceleration get() = previousVelocities.last().getVelocity()
+	override val zero = 0.0
 	override var current: Double = supplier.get()
 	private var offset = zero
 	override var position: Double

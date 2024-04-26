@@ -1,8 +1,8 @@
 package dev.frozenmilk.dairy.core.util.supplier.numeric
 
 import dev.frozenmilk.dairy.core.dependencyresolution.dependencyset.DependencySet
-import dev.frozenmilk.util.modifier.Modifier
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
+import dev.frozenmilk.util.modifier.Modifier
 import dev.frozenmilk.util.units.VelocityPacket
 import java.util.function.Supplier
 

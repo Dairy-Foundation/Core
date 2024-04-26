@@ -1,6 +1,8 @@
-package dev.frozenmilk.dairy.core.util.supplier.numeric
+package dev.frozenmilk.dairy.core.util.supplier.numeric.unit
 
 import dev.frozenmilk.dairy.core.util.supplier.logical.Conditional
+import dev.frozenmilk.dairy.core.util.supplier.numeric.EnhancedComparableNumericSupplier
+import dev.frozenmilk.dairy.core.util.supplier.numeric.EnhancedNumericSupplier
 import dev.frozenmilk.util.modifier.Modifier
 import dev.frozenmilk.util.units.ReifiedUnit
 import dev.frozenmilk.util.units.Unit
