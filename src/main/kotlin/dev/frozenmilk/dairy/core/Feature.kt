@@ -1,6 +1,6 @@
 package dev.frozenmilk.dairy.core
 
-import dev.frozenmilk.dairy.core.dependencyresolution.dependencies.Dependency
+import dev.frozenmilk.dairy.core.dependency.Dependency
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
 import dev.frozenmilk.sinister.Preload
 
@@ -18,7 +18,7 @@ interface Feature {
 	/**
 	 * the dependencies required by this Feature for it to be successfully enabled
 	 */
-	val dependencies: Set<Dependency<*, *>>
+	val dependency: Dependency<*>
 
 	fun preUserInitHook(opMode: Wrapper) {}
 

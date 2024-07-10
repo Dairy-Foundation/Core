@@ -1,6 +1,7 @@
 package dev.frozenmilk.dairy.core.util.supplier.numeric
 
-import dev.frozenmilk.dairy.core.dependencyresolution.dependencyset.DependencySet
+import dev.frozenmilk.dairy.core.dependency.Dependency
+import dev.frozenmilk.dairy.core.dependency.lazy.Yielding
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
 import dev.frozenmilk.util.modifier.Modifier
 import dev.frozenmilk.util.units.VelocityPacket
@@ -74,10 +75,7 @@ abstract class EnhancedNumericSupplier<N> @JvmOverloads constructor(override val
 	//
 	// Impl Feature:
 	//
-	override val dependencies by lazy {
-		DependencySet(this)
-				.yields()
-	}
+	override val dependency = Yielding
 
 	init {
 		@Suppress("LeakingThis")

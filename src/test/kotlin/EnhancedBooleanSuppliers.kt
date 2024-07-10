@@ -10,7 +10,7 @@ class EnhancedBooleanSuppliers {
 	@Before
 	fun before() {
 		state = false
-		enhancedBooleanSupplier.get()
+		enhancedBooleanSupplier.state
 		enhancedBooleanSupplier.invalidate()
 	}
 	@Test
@@ -85,7 +85,7 @@ class EnhancedBooleanSuppliers {
 	}
 	fun testState(new: Boolean, expected: Boolean) {
 		state = new
-		val res = enhancedBooleanSupplier.get()
+		val res = enhancedBooleanSupplier.state
 		Assert.assertEquals(expected, res)
 		enhancedBooleanSupplier.invalidate()
 	}

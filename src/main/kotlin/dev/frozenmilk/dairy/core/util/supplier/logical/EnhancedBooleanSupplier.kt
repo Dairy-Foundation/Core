@@ -1,6 +1,7 @@
 package dev.frozenmilk.dairy.core.util.supplier.logical
 
-import dev.frozenmilk.dairy.core.dependencyresolution.dependencyset.DependencySet
+import dev.frozenmilk.dairy.core.dependency.Dependency
+import dev.frozenmilk.dairy.core.dependency.lazy.Yielding
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
 import java.util.function.Supplier
 
@@ -154,8 +155,7 @@ class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, pr
 	//
 	// Impl Feature:
 	//
-	override val dependencies = DependencySet(this)
-			.yields()
+	override val dependency = Yielding
 
 	init {
 		register()

@@ -1,3 +1,5 @@
+package dev.frozenmilk.dairy.core.util.supplier.numeric.positional
+
 import dev.frozenmilk.dairy.core.util.supplier.numeric.EnhancedNumericSupplier
 import dev.frozenmilk.util.modifier.Modifier
 import dev.frozenmilk.util.units.getVelocity

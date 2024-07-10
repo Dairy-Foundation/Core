@@ -2,8 +2,7 @@ package dev.frozenmilk.dairy.core.util
 
 import dev.frozenmilk.dairy.core.Feature
 import dev.frozenmilk.dairy.core.FeatureRegistrar
-import dev.frozenmilk.dairy.core.dependencyresolution.dependencies.Dependency
-import dev.frozenmilk.dairy.core.dependencyresolution.dependencyset.DependencySet
+import dev.frozenmilk.dairy.core.dependency.lazy.Yielding
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
 import dev.frozenmilk.util.cell.LazyCell
 import java.util.function.Supplier
@@ -17,8 +16,7 @@ import java.util.function.Supplier
  * @see OpModeLazyCell for use in an op mode
  */
 class OpModeFreshLazyCell<T>(supplier: Supplier<T>) : LazyCell<T>(supplier), Feature {
-    override val dependencies: Set<Dependency<*, *>> = DependencySet(this)
-        .yields()
+    override val dependency = Yielding
 
     override fun get(): T {
         if(!initialised() && !FeatureRegistrar.opModeActive) throw IllegalStateException("Attempted to evaluate contents of OpModeFreshLazyCell while no opmode active")

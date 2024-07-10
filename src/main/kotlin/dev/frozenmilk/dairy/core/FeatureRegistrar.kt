@@ -7,10 +7,8 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode
 import com.qualcomm.robotcore.eventloop.opmode.OpModeManagerImpl
 import com.qualcomm.robotcore.eventloop.opmode.OpModeManagerNotifier
 import com.qualcomm.robotcore.util.RobotLog
-import dev.frozenmilk.dairy.core.dependencyresolution.DependencyResolutionFailureException
-import dev.frozenmilk.dairy.core.dependencyresolution.FeatureDependencyResolutionFailureException
-import dev.frozenmilk.dairy.core.dependencyresolution.plus
-import dev.frozenmilk.dairy.core.dependencyresolution.resolveDependencies
+import dev.frozenmilk.dairy.core.dependency.resolution.DependencyResolutionException
+import dev.frozenmilk.dairy.core.dependency.resolution.resolveDependencies
 import dev.frozenmilk.dairy.core.wrapper.LinearOpModeWrapper
 import dev.frozenmilk.dairy.core.wrapper.OpModeWrapper
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
@@ -22,6 +20,7 @@ import org.firstinspires.ftc.robotcore.internal.opmode.RegisteredOpModes
 import java.lang.ref.WeakReference
 import java.util.ArrayDeque
 import java.util.Queue
+import kotlin.concurrent.Volatile
 
 object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	private const val TAG = "DairyCore"
@@ -36,19 +35,23 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	private val registrationQueue: Queue<Pair<WeakReference<Feature>, Boolean>> = ArrayDeque()
 
 	/**
+	 * internal repr:
+	 *
 	 * features that have been activated via [resolveDependencies]
 	 */
-	private val activeFeatures: MutableSet<Feature> = mutableSetOf()
+	private val _activeFeatures = LinkedHashSet<Feature>()
 
 	/**
-	 * the feature flag annotations of the active OpMode
+	 * creates a list of features that have been activated via [resolveDependencies]
 	 */
-	private val activeFlags: MutableSet<Annotation> = mutableSetOf()
+	val activeFeatures
+		get() = _activeFeatures.toList()
 
 	/**
 	 * if there is currently an [OpMode] active on the robot, should be true almost all of the time
 	 */
 	@JvmStatic
+	@Volatile
 	var opModeActive: Boolean = false
 		private set
 
@@ -59,21 +62,22 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	/**
 	 * the mirror cell used to manage this
 	 */
-	private var activeOpModeMirroredCell = LazyCell {
+	private val activeOpModeMirroredCell = LazyCell {
 		MirroredCell<OpMode>(opModeManager, "activeOpMode")
 	}
 
-	private val activeOpModeWrapperCell  = LateInitCell<Wrapper>()
+	private val activeOpModeWrapperCell = LateInitCell<Wrapper>()
 
 	/**
 	 * the currently active OpMode, contents may be undefined if [opModeActive] does not return true
 	 */
 	@JvmStatic
 	var activeOpModeWrapper by activeOpModeWrapperCell
+		private set
 
 	@JvmStatic
 	val activeOpMode: OpMode
-		get() { return activeOpModeMirroredCell.get().get() }
+		get() { return activeOpModeWrapper.opMode }
 
 	/**
 	 * this is mildly expensive to do while an OpMode is running, especially if many features are registered
@@ -99,47 +103,51 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	 * if this [feature] is attached for [activeOpModeWrapper]
 	 */
 	@JvmStatic
-	fun isAttached(feature: Feature) = activeFeatures.contains(feature)
+	fun isAttached(feature: Feature) = _activeFeatures.contains(feature)
 
 	private fun resolveRegistrationQueue() {
 		if (registrationQueue.isEmpty()) return
 		registrationQueue.filter { !it.second }
 				.forEach { (feature, _) ->
 					RobotLog.vv(TAG, "Deactivating Feature: ${feature::class.java.simpleName}")
-					activeFeatures.remove(feature.get())
+					_activeFeatures.remove(feature.get())
 					registeredFeatures.remove(
 							registeredFeatures.first {
 								it.get() == feature.get()
 							}
 					)
 				}
+		val toResolve = registrationQueue.filter { it.second }.mapNotNull { it.first.get() } // makes a copy of the set
+		val resolved = _activeFeatures.toMutableSet()
 		resolveDependencies(
-				registrationQueue.filter { it.second }.mapNotNull { it.first.get() }, // makes a copy of the set
-				activeFeatures.toSet(),
-				activeFlags
-		).second.forEach {
+				activeOpModeWrapper,
+				toResolve.toMutableSet(),
+				resolved,
+		)
+		resolved.intersect(toResolve.toSet()).forEach {
 			RobotLog.vv(TAG, "Activating Feature: ${it::class.java.simpleName}")
-			activeFeatures.add(it)
+			_activeFeatures.add(it)
 		}
 		registrationQueue.clear()
 	}
 
 	/**
-	 * ensures that each feature is currently activated, if not, will throw a descriptive error about why it isn't
+	 * ensures that each feature could be activated, if not, will throw a descriptive error about why it isn't
 	 *
 	 * an optional dependency resolution diagnostic tool
+	 *
+	 * todo: log the output of errors on normal dependency resolution
 	 */
 	@JvmStatic
-	fun checkFeatures(opMode: OpMode, vararg features: Feature) {
-		val resolved = resolveDependencies(features.toList(), activeFeatures.toSet(), opMode::class.java.annotations.toList()).first
-		// throws all the exceptions it came across in one giant message, if we find any
-		if (!features.all { resolved[it].isNullOrEmpty() }) {
-			throw DependencyResolutionFailureException(resolved.values.fold(Exception("")) { exception: Exception, featureDependencyResolutionFailureExceptions: Set<FeatureDependencyResolutionFailureException> ->
-				exception + featureDependencyResolutionFailureExceptions.fold(Exception("")) { failureException: Exception, featureDependencyResolutionFailureException: FeatureDependencyResolutionFailureException ->
-					failureException + featureDependencyResolutionFailureException
-				}
-			}.message!!)
-		}
+	fun checkFeatures(vararg features: Feature) {
+		throw DependencyResolutionException(
+				resolveDependencies(
+						activeOpModeWrapper,
+						features.toMutableSet(),
+						_activeFeatures.toMutableSet(),
+				)
+						.mapNotNull { (k, v) -> k to (v?.message ?: return@mapNotNull null) }
+		)
 	}
 
 	private val opModeManagerCell = LateInitCell<OpModeManagerImpl>()
@@ -170,12 +178,6 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	override fun onOpModePreInit(opMode: OpMode) {
 		cleanFeatures()
 
-		// locate feature flags, and then populate active listeners
-		activeFlags.addAll(opMode.javaClass.annotations)
-
-		registrationQueue.addAll(registeredFeatures.map{ it to true })
-		resolveRegistrationQueue()
-
 		val meta = RegisteredOpModes.getInstance().getOpModeMetadata(opModeManager.activeOpModeName) ?: throw RuntimeException("could not find metadata for OpMode")
 
 		// replace the OpMode with a wrapper that the user never sees, but provides our hooks
@@ -191,11 +193,11 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		}
 		opModeActive = true
 
-		// resolves the queue of anything that was registered later
+		registrationQueue.addAll(registeredFeatures.map{ it to true })
 		resolveRegistrationQueue()
 
 		RobotLog.vv(TAG, "Initing opmode with the following active features:")
-		RobotLog.vv(TAG, activeFeatures.map { it.toString() }.toString())
+		RobotLog.vv(TAG, _activeFeatures.map { it.toString() }.toString())
 	}
 
 	@JvmStatic
@@ -206,25 +208,25 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 			is LinearOpModeWrapper -> opMode._state = Wrapper.OpModeState.INIT
 		}
 		resolveRegistrationQueue()
-		activeFeatures.forEach { it.preUserInitHook(opMode) }
+		_activeFeatures.forEach { it.preUserInitHook(opMode) }
 	}
 
 	@JvmStatic
 	fun opModePostInit(opMode: Wrapper) {
 		resolveRegistrationQueue()
-		activeFeatures.forEach { it.postUserInitHook(opMode) }
+		_activeFeatures.forEach { it.postUserInitHook(opMode) }
 	}
 
 	@JvmStatic
 	fun opModePreInitLoop(opMode: Wrapper) {
 		resolveRegistrationQueue()
-		activeFeatures.forEach { it.preUserInitLoopHook(opMode) }
+		_activeFeatures.forEach { it.preUserInitLoopHook(opMode) }
 	}
 
 	@JvmStatic
 	fun opModePostInitLoop(opMode: Wrapper) {
 		resolveRegistrationQueue()
-		activeFeatures.forEach { it.postUserInitLoopHook(opMode) }
+		_activeFeatures.forEach { it.postUserInitLoopHook(opMode) }
 	}
 
 	@JvmStatic
@@ -234,7 +236,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 			is LinearOpModeWrapper -> opMode._state = Wrapper.OpModeState.ACTIVE
 		}
 		resolveRegistrationQueue()
-		activeFeatures.forEach { it.preUserStartHook(opMode) }
+		_activeFeatures.forEach { it.preUserStartHook(opMode) }
 	}
 
 	override fun onOpModePreStart(opMode: OpMode) {
@@ -244,31 +246,31 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	@JvmStatic
 	fun opModePostStart(opMode: Wrapper) {
 		resolveRegistrationQueue()
-		activeFeatures.forEach { it.postUserStartHook(opMode) }
+		_activeFeatures.forEach { it.postUserStartHook(opMode) }
 	}
 
 	@JvmStatic
 	fun opModePreLoop(opMode: Wrapper) {
 		resolveRegistrationQueue()
-		activeFeatures.forEach { it.preUserLoopHook(opMode) }
+		_activeFeatures.forEach { it.preUserLoopHook(opMode) }
 	}
 
 	@JvmStatic
 	fun opModePostLoop(opMode: Wrapper) {
 		resolveRegistrationQueue()
-		activeFeatures.forEach { it.postUserLoopHook(opMode) }
+		_activeFeatures.forEach { it.postUserLoopHook(opMode) }
 	}
 
 	@JvmStatic
 	fun opModePreStop(opMode: Wrapper) {
 		resolveRegistrationQueue()
-		activeFeatures.forEach { it.preUserStopHook(opMode) }
+		_activeFeatures.forEach { it.preUserStopHook(opMode) }
 	}
 
 	@JvmStatic
 	fun opModePostStop(opMode: Wrapper) {
 		resolveRegistrationQueue()
-		activeFeatures.forEach { it.postUserStopHook(opMode) }
+		_activeFeatures.forEach { it.postUserStopHook(opMode) }
 		when (opMode) {
 			is OpModeWrapper -> opMode._state = Wrapper.OpModeState.STOPPED
 			is LinearOpModeWrapper -> opMode._state = Wrapper.OpModeState.STOPPED
@@ -279,8 +281,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		// we expose our own hook, rather than this one
 		resolveRegistrationQueue()
 		// empty active listeners and active flags
-		activeFeatures.clear()
-		activeFlags.clear()
+		_activeFeatures.clear()
 		opModeActive = false
 		System.gc()
 	}

@@ -1,6 +1,7 @@
 package dev.frozenmilk.dairy.core.wrapper
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode
+import dev.frozenmilk.sinister.getAllAnnotations
 import org.firstinspires.ftc.robotcore.internal.opmode.OpModeMeta
 
 class LinearOpModeWrapper internal constructor(override val opMode: LinearOpMode, override val meta: OpModeMeta) : Wrapper {
@@ -9,4 +10,5 @@ class LinearOpModeWrapper internal constructor(override val opMode: LinearOpMode
 	override val state: Wrapper.OpModeState
 		get() { return _state }
 	override val name: String = meta.displayName
+	override val inheritedAnnotations = opMode.javaClass.getAllAnnotations()
 }

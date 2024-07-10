@@ -2,6 +2,7 @@ package dev.frozenmilk.dairy.core.wrapper
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode
 import dev.frozenmilk.dairy.core.FeatureRegistrar
+import dev.frozenmilk.sinister.getAllAnnotations
 import org.firstinspires.ftc.robotcore.internal.opmode.OpModeMeta
 import org.firstinspires.ftc.robotcore.internal.opmode.OpModeMeta.Flavor
 
@@ -13,6 +14,7 @@ class OpModeWrapper internal constructor(override val opMode: OpMode, override v
 		get() { return _state }
 
 	override val name: String = meta.displayName
+	override val inheritedAnnotations = opMode.javaClass.getAllAnnotations()
 
 	/**
 	 * moves things around, so that the irritating little fields that exist on each OpMode get remapped through this correctly
