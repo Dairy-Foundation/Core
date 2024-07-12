@@ -3,6 +3,7 @@ plugins {
 	id("kotlin-android")
 	id("org.jetbrains.dokka") version "1.9.10"
 	id("maven-publish")
+	id("java-test-fixtures")
 }
 
 android {
@@ -17,11 +18,13 @@ android {
 		testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 		consumerProguardFiles("consumer-rules.pro")
 	}
-
 	buildTypes {
 		release {
 			isMinifyEnabled = false
 			proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+		}
+		testFixtures {
+			enable = true
 		}
 	}
 	compileOptions {
@@ -37,9 +40,11 @@ android {
 }
 
 dependencies {
+	testFixturesApi("junit:junit:4.13.2")
+	testFixturesApi("org.firstinspires.ftc:RobotCore:9.1.0")
+
 	//noinspection GradleDependency
 	implementation("androidx.appcompat:appcompat:1.2.0")
-	testImplementation("org.testng:testng:6.9.6")
 
 	api(project(":Util"))
 	api(project(":Sinister"))
