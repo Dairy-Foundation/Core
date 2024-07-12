@@ -1,11 +1,13 @@
+package dev.frozenmilk.dairy.core.test
+
 import dev.frozenmilk.dairy.core.util.supplier.logical.EnhancedBooleanSupplier
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
 class EnhancedBooleanSuppliers {
-	var state: Boolean = false
-	val enhancedBooleanSupplier = EnhancedBooleanSupplier { state }
+	private var state: Boolean = false
+	private val enhancedBooleanSupplier = EnhancedBooleanSupplier { state }
 
 	@Before
 	fun before() {
