@@ -28,6 +28,3 @@ class OpModeLazyCell<T>(supplier: Supplier<T>) : LazyCell<T>(supplier), Feature 
 		FeatureRegistrar.deregisterFeature(this)
 	}
 }
-
-@JvmName("CellUtils")
-fun <T> Supplier<T>.intoOpModeLazyCell() = OpModeLazyCell(this)

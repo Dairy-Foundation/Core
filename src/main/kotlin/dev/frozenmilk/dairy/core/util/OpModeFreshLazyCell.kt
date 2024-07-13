@@ -32,6 +32,3 @@ class OpModeFreshLazyCell<T>(supplier: Supplier<T>) : LazyCell<T>(supplier), Fea
         get()
     }
 }
-
-@JvmName("CellUtils")
-fun <T> Supplier<T>.intoOpModeFreshLazyCell() = OpModeFreshLazyCell(this)
