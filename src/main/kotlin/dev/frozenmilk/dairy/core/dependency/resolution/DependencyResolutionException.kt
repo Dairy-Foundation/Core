@@ -3,7 +3,7 @@ package dev.frozenmilk.dairy.core.dependency.resolution
 /**
  * @param messages a list of error causing objects paired with error message strings, the object may be left null, to indicate no affiliation to an error causing object
  */
-class DependencyResolutionException (val messages: MutableList<Pair<Any?, String>>) : Throwable() {
+class DependencyResolutionException (val messages: MutableList<Pair<Any?, String>>) : RuntimeException() {
 	constructor(messages: Collection<Pair<Any?, String>>) : this (messages.toMutableList())
 	constructor(vararg messages: Pair<Any?, String>) : this(mutableListOf(*messages))
 	constructor(vararg messages: String) : this(messages.asList())
