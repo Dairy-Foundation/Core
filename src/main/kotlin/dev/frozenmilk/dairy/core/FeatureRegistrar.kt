@@ -117,14 +117,14 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 							}
 					)
 				}
-		val toResolve = registrationQueue.filter { it.second }.mapNotNull { it.first.get() } // makes a copy of the set
+		val toResolve = registrationQueue.filter { it.second }.mapNotNull { it.first.get() }.toSet() // makes a copy of the set
 		val resolved = _activeFeatures.toMutableSet()
 		resolveDependencies(
 				activeOpModeWrapper,
 				toResolve.toMutableSet(),
 				resolved,
 		)
-		resolved.intersect(toResolve.toSet()).forEach {
+		resolved.intersect(toResolve).forEach {
 			RobotLog.vv(TAG, "Activating Feature: ${it::class.java.simpleName}")
 			_activeFeatures.add(it)
 		}
