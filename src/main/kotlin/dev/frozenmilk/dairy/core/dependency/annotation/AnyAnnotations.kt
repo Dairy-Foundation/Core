@@ -12,6 +12,7 @@ class AnyAnnotations(annotations: Set<Class<out Annotation>>) : AnnotationDepend
 		)
 	}
 }) {
+	@SafeVarargs
 	constructor(vararg annotations: Class<out Annotation>) : this(annotations.toSet())
 	constructor(annotations: Collection<Class<out Annotation>>) : this(annotations.toSet())
 }

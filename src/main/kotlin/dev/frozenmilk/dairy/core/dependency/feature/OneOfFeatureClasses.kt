@@ -17,6 +17,7 @@ class OneOfFeatureClasses(features: Set<Class<out Feature>>) : FeatureDependency
 			features.map { "No feature of type ${it.simpleName}" }
 	)
 }) {
+	@SafeVarargs
 	constructor(vararg features: Class<out Feature>) : this(features.toSet())
 	constructor(features: Collection<Class<out Feature>>) : this(features.toSet())
 }

@@ -10,6 +10,7 @@ class AnyFeatureClasses(features: Set<Class<out Feature>>) : FeatureDependency<L
 		)
 	}
 }) {
+	@SafeVarargs
 	constructor(vararg features: Class<out Feature>) : this(features.toSet())
 	constructor(features: Collection<Class<out Feature>>) : this(features.toSet())
 }

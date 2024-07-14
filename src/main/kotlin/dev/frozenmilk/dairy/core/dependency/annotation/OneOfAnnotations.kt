@@ -19,6 +19,7 @@ class OneOfAnnotations(annotations: Set<Class<out Annotation>>) : AnnotationDepe
 					.map { "No annotation of type ${it.simpleName}" }
 	)
 }) {
+	@SafeVarargs
 	constructor(vararg annotations: Class<out Annotation>) : this(annotations.toSet())
 	constructor(annotations: Collection<Class<out Annotation>>) : this(annotations.toSet())
 }
