@@ -6,11 +6,7 @@ import org.junit.Assert
 import org.junit.runner.RunWith
 
 @RunWith(OpModeTestRunner::class)
-class FailAttachment : TestOpMode() {
-	override fun getFeatures() = listOf(
-			SingleAnnotationTest,
-			SingleFeatureTest,
-	)
+class FailAttachment : TestOpMode(SingleAnnotationTest, SingleFeatureTest) {
 	override fun init() {
 		features.forEach { Assert.assertEquals(false, it.isAttached()) }
 	}

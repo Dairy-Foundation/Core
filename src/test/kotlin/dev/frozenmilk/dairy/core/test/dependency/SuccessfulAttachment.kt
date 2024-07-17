@@ -8,13 +8,12 @@ import org.junit.runner.RunWith
 
 @RunWith(OpModeTestRunner::class)
 @SingleAnnotationTest.Attach
-class SuccessfulAttachment : TestOpMode() {
-	override fun getFeatures() = listOf(
-			YieldingTest,
-			SingleAnnotationTest,
-			SingleFeatureTest,
-			FailBindingTest,
-	)
+class SuccessfulAttachment : TestOpMode(
+	YieldingTest,
+	SingleAnnotationTest,
+	SingleFeatureTest,
+	FailBindingTest,
+) {
 	override fun init() {
 		// all are attached
 		features.forEach { Assert.assertEquals(true, it.isAttached()) }

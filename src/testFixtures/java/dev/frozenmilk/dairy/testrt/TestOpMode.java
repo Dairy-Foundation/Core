@@ -4,6 +4,8 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
 import dev.frozenmilk.dairy.core.Feature;
@@ -21,7 +23,15 @@ public abstract class TestOpMode extends OpMode {
 	private boolean advanceToStop = true;
 	
 	@NotNull
-	public abstract Collection<Feature> getFeatures();
+	public Collection<Feature> features;
+	
+	protected TestOpMode(@NotNull Collection<Feature> features) {
+		this.features = features;
+	}
+	
+	protected TestOpMode(@NotNull Feature... features) {
+		this.features = Arrays.asList(features);
+	}
 	
 	public boolean getAdvanceToStart() {
 		return this.advanceToStart;
@@ -52,15 +62,17 @@ public abstract class TestOpMode extends OpMode {
 		} else {
 			((OpModeWrapper)opMode).init();
 			
-			while(!this.getAdvanceToStart()) {
+			do {
 				((OpModeWrapper)opMode).init_loop();
 			}
+			while(!this.getAdvanceToStart());
 			
 			((OpModeWrapper)opMode).start();
 			
-			while(!this.getAdvanceToStop()) {
+			do {
 				((OpModeWrapper)opMode).loop();
 			}
+			while(!this.getAdvanceToStop());
 			
 			((OpModeWrapper)opMode).stop();
 		}

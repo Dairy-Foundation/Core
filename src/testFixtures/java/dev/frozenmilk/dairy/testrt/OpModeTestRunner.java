@@ -200,7 +200,7 @@ public final class OpModeTestRunner extends BlockJUnit4ClassRunner {
 		} else {
 			return new Statement() {
 				public void evaluate() throws Throwable {
-					Iterable<Feature> $this$forEach$iv = ((TestOpMode)$target).getFeatures();
+					Iterable<Feature> $this$forEach$iv = ((TestOpMode)$target).features;
 					Iterator<Feature> var3 = $this$forEach$iv.iterator();
 					
 					Feature element$iv;
