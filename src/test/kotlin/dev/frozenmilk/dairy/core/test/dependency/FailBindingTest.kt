@@ -5,8 +5,8 @@ import dev.frozenmilk.dairy.core.dependency.Dependency
 import org.junit.Assert
 
 object FailBindingTest : Feature {
-	override val dependency = Dependency { _, _, _ -> }.upgrade()
-			.onFail {
-				Assert.fail()
-			}
+	override val dependency = Dependency { _, _, _ -> }
+		.onFail {
+			Assert.fail()
+		}
 }
