@@ -10,7 +10,7 @@ import dev.frozenmilk.util.units.getVelocity
 import dev.frozenmilk.util.units.homogenise
 import java.util.function.Supplier
 
-class EnhancedUnitSupplier<U: Unit<U>, RU: ReifiedUnit<U, RU>>(supplier: Supplier<out RU>, modifier: Modifier<RU> = Modifier { x -> x }) : EnhancedNumericSupplier<RU>(supplier, modifier), EnhancedComparableNumericSupplier<RU, Conditional<RU>> {
+class EnhancedUnitSupplier<U: Unit<U>, RU: ReifiedUnit<U, RU>> @JvmOverloads constructor(supplier: Supplier<out RU>, modifier: Modifier<RU> = Modifier { x -> x }) : EnhancedNumericSupplier<RU>(supplier, modifier), EnhancedComparableNumericSupplier<RU, Conditional<RU>> {
 	override val zero = supplier.get().run { this - this }
 	override var current = supplier.get()
 	private var offset = zero

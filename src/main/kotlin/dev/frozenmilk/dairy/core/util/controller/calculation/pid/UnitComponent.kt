@@ -5,7 +5,7 @@ import dev.frozenmilk.util.units.ReifiedUnit
 import dev.frozenmilk.util.units.Unit
 
 class UnitComponent {
-	class P <U: Unit<U>, RU: ReifiedUnit<U, RU>> (var kP: RU) : ControllerCalculation<RU> {
+	class P <U: Unit<U>, RU: ReifiedUnit<U, RU>> (var kP: Double) : ControllerCalculation<RU> {
 		override fun evaluate(
 			accumulation: RU,
 			currentState: RU,
@@ -14,7 +14,7 @@ class UnitComponent {
 			deltaTime: Double
 		) = accumulation + (error * kP)
 	}
-	class I <U: Unit<U>, RU: ReifiedUnit<U, RU>> @JvmOverloads constructor(var kI: RU, var lowerLimit: RU? = null, var upperLimit: RU? = null) : ControllerCalculation<RU> {
+	class I <U: Unit<U>, RU: ReifiedUnit<U, RU>> @JvmOverloads constructor(var kI: Double, var lowerLimit: RU? = null, var upperLimit: RU? = null) : ControllerCalculation<RU> {
 		var i: RU? = null
 		override fun evaluate(
 			accumulation: RU,
@@ -30,7 +30,7 @@ class UnitComponent {
 			return accumulation + i!!
 		}
 	}
-	class D <U: Unit<U>, RU: ReifiedUnit<U, RU>> (var kD: RU) : ControllerCalculation<RU> {
+	class D <U: Unit<U>, RU: ReifiedUnit<U, RU>> (var kD: Double) : ControllerCalculation<RU> {
 		private var previousError: RU? = null
 
 		override fun evaluate(

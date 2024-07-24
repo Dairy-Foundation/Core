@@ -9,6 +9,7 @@ import java.util.function.Consumer
 import java.util.function.Supplier
 import kotlin.math.abs
 
+class DoubleController
 /**
  * @param targetSupplier supplier for the target position
  * @param inputSupplier supplier for the system state
@@ -21,12 +22,13 @@ import kotlin.math.abs
  * it is recommended to either re-[register] if you wish to re-use this,
  * or regenerate for each OpMode (which must be done if this is built from regenerated resourced, like motors or encoders)
  */
-class DoubleController(
+@JvmOverloads
+constructor(
 	targetSupplier: Supplier<out Double>,
 	inputSupplier: IEnhancedNumericSupplier<Double>,
 	motionComponent: MotionComponents,
 	toleranceEpsilon: Double,
-	outputConsumer: Consumer<Double>,
+	outputConsumer: Consumer<Double> = Consumer {},
 	controllerCalculation: ControllerCalculation<Double>
 ) : Controller<Double>(
 	targetSupplier,
