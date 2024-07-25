@@ -14,12 +14,14 @@ private data object CyclicA : Feature {
 		}
 		.onFail {
 			println("$this: ${it.message}")
+			Assert.assertEquals("feature not attached -- CyclicB", it.message)
 		}
 }
 private data object CyclicB : Feature {
 	override val dependency = SingleFeature(CyclicA)
 		.onFail {
 			println("$this: ${it.message}")
+			Assert.assertEquals("feature not attached -- CyclicA", it.message)
 		}
 		.onResolve {
 			Assert.fail()
@@ -28,7 +30,7 @@ private data object CyclicB : Feature {
 
 @RunWith(OpModeTestRunner::class)
 class CyclicDependency : TestOpMode(CyclicA, CyclicB) {
-	init {
+	override fun init() {
 		features.forEach {
 			if (it.isAttached()) Assert.fail("features should not attach")
 		}
