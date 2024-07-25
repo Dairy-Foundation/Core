@@ -3,7 +3,6 @@ package dev.frozenmilk.dairy.core.dependency.resolution
 import com.qualcomm.robotcore.util.RobotLog
 import dev.frozenmilk.dairy.core.Feature
 import dev.frozenmilk.dairy.core.dependency.Dependency
-import dev.frozenmilk.dairy.core.dependency.DependencyBase
 import dev.frozenmilk.dairy.core.dependency.resolveAndAccept
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
 
@@ -43,7 +42,6 @@ internal fun resolveDependencies(wrapper: Wrapper, toResolve: MutableSet<Feature
 	toResolve
 			.forEach {
 				val dependency = it.dependency
-				if (dependency !is DependencyBase<*>) return@forEach
 				try {
 					dependency.acceptErr(exceptionMap[it]!!)
 				}
