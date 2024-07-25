@@ -1,6 +1,5 @@
 package dev.frozenmilk.dairy.core.dependency.resolution
 
-import com.qualcomm.robotcore.util.RobotLog
 import dev.frozenmilk.dairy.core.Feature
 import dev.frozenmilk.dairy.core.dependency.Dependency
 import dev.frozenmilk.dairy.core.dependency.resolveAndAccept
@@ -21,7 +20,7 @@ internal fun resolveDependencies(wrapper: Wrapper, toResolve: MutableSet<Feature
 					feature.dependency.resolveAndAccept(wrapper, resolved.toList(), yielding)
 				}
 				catch (e: Dependency.CallbackErr) {
-					RobotLog.ee("DependencyResolution", e.cause, "error was thrown while running onResolve callbacks for dependencies, logged but not thrown")
+					throw e.cause
 				}
 				catch (e: Throwable) {
 					exceptionMap[feature] = e
@@ -41,13 +40,7 @@ internal fun resolveDependencies(wrapper: Wrapper, toResolve: MutableSet<Feature
 
 	toResolve
 			.forEach {
-				val dependency = it.dependency
-				try {
-					dependency.acceptErr(exceptionMap[it]!!)
-				}
-				catch (e: Throwable) {
-					RobotLog.ee("DependencyResolution", e, "error was thrown while running onFail callbacks for dependencies, logged but not thrown")
-				}
+				it.dependency.acceptErr(exceptionMap[it]!!)
 			}
 
 	return exceptionMap
