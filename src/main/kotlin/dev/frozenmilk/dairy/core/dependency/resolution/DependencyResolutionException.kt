@@ -16,7 +16,7 @@ class DependencyResolutionException (val messages: MutableList<Pair<Any?, String
 
 	override val message
 		get() = messages.fold("") { acc, (obj, message) ->
-			if (obj != null) "$acc\n$obj: $message"
+			if (obj != null) "$acc\n$message -- $obj"
 			else "$acc\n$message"
 		}
 
