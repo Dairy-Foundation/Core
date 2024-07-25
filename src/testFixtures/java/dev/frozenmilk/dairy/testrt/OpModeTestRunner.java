@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
@@ -78,13 +79,15 @@ public final class OpModeTestRunner extends BlockJUnit4ClassRunner {
 		this.registeredFeatures$delegate = new MirroredCell<>(FeatureRegistrar.INSTANCE, "registeredFeatures");
 		final Method resolveRegistrationQueue = SinisterUtil.getAllMethods(FeatureRegistrar.class, OpModeTestRunner::resolveRegistrationQueue$lambda$5$lambda$4).get(0);
 		resolveRegistrationQueue.setAccessible(true);
-		this.resolveRegistrationQueue = (() -> {
+		this.resolveRegistrationQueue = () -> {
 			try {
 				resolveRegistrationQueue.invoke(FeatureRegistrar.INSTANCE);
-			} catch (IllegalAccessException | InvocationTargetException e) {
+			} catch (IllegalAccessException e) {
 				throw new RuntimeException(e);
+			} catch (InvocationTargetException e) {
+				throw new RuntimeException(e.getCause());
 			}
-		});
+		};
 		this.activeOpModeWrapperCell$delegate = new MirroredCell<>(FeatureRegistrar.INSTANCE, "activeOpModeWrapperCell");
 		this.activeOpModeWrapper$delegate = this.getActiveOpModeWrapperCell();
 		this.opModeActive$delegate = new MirroredCell<>(FeatureRegistrar.INSTANCE, "opModeActive");
@@ -155,7 +158,7 @@ public final class OpModeTestRunner extends BlockJUnit4ClassRunner {
 		this.opModeActive$delegate.accept(var1);
 	}
 	
-	public final void patchFeatureRegistrar(@NotNull OpMode opMode) throws InvocationTargetException, IllegalAccessException, InstantiationException {
+	public final void patchFeatureRegistrar(@NotNull OpMode opMode) throws Throwable {
 		Intrinsics.checkNotNullParameter(opMode, "opMode");
 		this.cleanFeatures.run();
 		OpModeMeta.Builder var10000 = new OpModeMeta.Builder();
@@ -190,7 +193,12 @@ public final class OpModeTestRunner extends BlockJUnit4ClassRunner {
 		}
 		
 		var16.addAll(destination$iv$iv);
-		this.resolveRegistrationQueue.run();
+		try {
+			this.resolveRegistrationQueue.run();
+		}
+		catch (RuntimeException e) {
+			throw Objects.requireNonNull(e.getCause());
+		}
 	}
 	
 	private static Statement dairyOpModeRuntime(final Object $target, final OpModeTestRunner this$0, final Statement base, Description var3) {
