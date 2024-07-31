@@ -1,12 +1,9 @@
 package dev.frozenmilk.dairy.core.util.supplier.numeric
 
-import dev.frozenmilk.dairy.core.Feature
 import dev.frozenmilk.util.modifier.Modifier
 import java.util.function.Supplier
 
-interface IEnhancedNumericSupplier<N> : Feature {
-	val supplier: Supplier<out N>
-	val modifier: Modifier<N>
+interface IEnhancedNumericSupplier<N> : MotionComponentSupplier<N> {
 	/**
 	 * position
 	 */
@@ -39,11 +36,8 @@ interface IEnhancedNumericSupplier<N> : Feature {
 	 */
 	val rawAcceleration: N
 
-	//
-	// Impl Feature:
-	//
 	/**
-	 * if this automatically updates, by calling [invalidate] and [get]
+	 * if this automatically updates, by calling [invalidate] and determining [position]
 	 */
 	var autoUpdates: Boolean
 
@@ -56,8 +50,6 @@ interface IEnhancedNumericSupplier<N> : Feature {
 	fun findErrorRawVelocity(target: N): N
 	fun findErrorAcceleration(target: N): N
 	fun findErrorRawAcceleration(target: N): N
-	fun component(motionComponent: MotionComponents): N
-	fun componentError(motionComponent: MotionComponents, target: N): N
 	fun <N2> merge(supplier: Supplier<out N2>, merge: (N, N2) -> N): IEnhancedNumericSupplier<N>
 
 	/**
