@@ -141,12 +141,12 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	@JvmStatic
 	fun checkFeatures(vararg features: Feature) {
 		throw DependencyResolutionException(
-				resolveDependencies(
-						activeOpModeWrapper,
-						features.toMutableSet(),
-						_activeFeatures.toMutableSet(),
-				)
-						.mapNotNull { (k, v) -> k to (v?.message ?: return@mapNotNull null) }
+			resolveDependencies(
+				activeOpModeWrapper,
+				features.toMutableSet(),
+				_activeFeatures.toMutableSet(),
+			)
+				.mapNotNull { (k, v) -> k to (v?.message ?: return@mapNotNull null) }
 		)
 	}
 
