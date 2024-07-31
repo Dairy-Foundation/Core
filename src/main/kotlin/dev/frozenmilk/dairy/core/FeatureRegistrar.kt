@@ -284,6 +284,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		// empty active listeners and active flags
 		_activeFeatures.clear()
 		opModeActive = false
+		activeOpModeMirroredCell.safeGet()?.invalidate() // we need to kill the previous OpMode, so they can't reuse it, todo test
 		System.gc()
 	}
 }
