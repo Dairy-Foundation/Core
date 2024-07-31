@@ -20,8 +20,8 @@ class EnhancedVector2DSupplier(override val supplier: Supplier<out Vector2D>, ov
 	override val rawVelocity get() = previousPositions.last().getVelocity()
 	override val acceleration get() = previousVelocities.homogenise().getVelocity()
 	override val rawAcceleration get() = previousVelocities.last().getVelocity()
-	override fun setModifier(modifier: Modifier<Vector2D>) = EnhancedVector2DSupplier(this::position, modifier)
-	override fun applyModifier(modifier: Modifier<Vector2D>) = EnhancedVector2DSupplier(supplier, modifier)
+	override fun applyModifier(modifier: Modifier<Vector2D>) = EnhancedVector2DSupplier(supplier) { modifier.modify(this.modifier.modify(it)) }
+	override fun setModifier(modifier: Modifier<Vector2D>) = EnhancedVector2DSupplier(supplier, modifier)
 	override fun <N2> merge(supplier: Supplier<out N2>, merge: (Vector2D, N2) -> Vector2D) = EnhancedVector2DSupplier({ merge(get(), supplier.get()) }, modifier)
 	override fun findErrorPosition(target: Vector2D) = target - position
 	override fun findErrorVelocity(target: Vector2D) = target - velocity

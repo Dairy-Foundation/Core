@@ -25,7 +25,7 @@ class EnhancedDoubleSupplier @JvmOverloads constructor(override val supplier: Su
 	override fun findErrorAcceleration(target: Double) = target - acceleration
 	override fun findErrorRawAcceleration(target: Double) = target - rawAcceleration
 	override fun <N2> merge(supplier: Supplier<out N2>, merge: (Double, N2) -> Double) = EnhancedDoubleSupplier({ merge(get(), supplier.get()) }, modifier)
-	override fun applyModifier(modifier: Modifier<Double>) = EnhancedDoubleSupplier(this::position, modifier)
+	override fun applyModifier(modifier: Modifier<Double>) = EnhancedDoubleSupplier(supplier) { modifier.modify(this.modifier.modify(it)) }
 	override fun setModifier(modifier: Modifier<Double>) = EnhancedDoubleSupplier(supplier, modifier)
 	override fun conditionalBindPosition() = Conditional(this::position)
 	override fun conditionalBindVelocity() = Conditional(this::velocity)

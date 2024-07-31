@@ -29,7 +29,7 @@ class EnhancedUnitSupplier<U: Unit<U>, RU: ReifiedUnit<U, RU>> @JvmOverloads con
 	override fun findErrorAcceleration(target: RU) = acceleration.findError(target)
 	override fun findErrorRawAcceleration(target: RU) = rawAcceleration.findError(target)
 	override fun <N2> merge(supplier: Supplier<out N2>, merge: (RU, N2) -> RU) = EnhancedUnitSupplier({ merge(get(), supplier.get()) }, modifier)
-	override fun applyModifier(modifier: Modifier<RU>) = EnhancedUnitSupplier(this::position, modifier)
+	override fun applyModifier(modifier: Modifier<RU>) = EnhancedUnitSupplier(supplier) { modifier.modify( this.modifier.modify(it) ) }
 	override fun setModifier(modifier: Modifier<RU>) = EnhancedUnitSupplier(supplier, modifier)
 	override fun conditionalBindPosition() = Conditional(this::position)
 	override fun conditionalBindVelocity() = Conditional(this::velocity)
