@@ -214,7 +214,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	@JvmStatic
 	fun opModePostInit(opMode: Wrapper) {
 		resolveRegistrationQueue()
-		_activeFeatures.forEach { it.postUserInitHook(opMode) }
+		_activeFeatures.reversed().forEach { it.postUserInitHook(opMode) }
 	}
 
 	@JvmStatic
@@ -226,7 +226,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	@JvmStatic
 	fun opModePostInitLoop(opMode: Wrapper) {
 		resolveRegistrationQueue()
-		_activeFeatures.forEach { it.postUserInitLoopHook(opMode) }
+		_activeFeatures.reversed().forEach { it.postUserInitLoopHook(opMode) }
 	}
 
 	@JvmStatic
@@ -246,7 +246,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	@JvmStatic
 	fun opModePostStart(opMode: Wrapper) {
 		resolveRegistrationQueue()
-		_activeFeatures.forEach { it.postUserStartHook(opMode) }
+		_activeFeatures.reversed().forEach { it.postUserStartHook(opMode) }
 	}
 
 	@JvmStatic
@@ -258,7 +258,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	@JvmStatic
 	fun opModePostLoop(opMode: Wrapper) {
 		resolveRegistrationQueue()
-		_activeFeatures.forEach { it.postUserLoopHook(opMode) }
+		_activeFeatures.reversed().forEach { it.postUserLoopHook(opMode) }
 	}
 
 	@JvmStatic
@@ -270,7 +270,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	@JvmStatic
 	fun opModePostStop(opMode: Wrapper) {
 		resolveRegistrationQueue()
-		_activeFeatures.forEach { it.postUserStopHook(opMode) }
+		_activeFeatures.reversed().forEach { it.postUserStopHook(opMode) }
 		when (opMode) {
 			is OpModeWrapper -> opMode._state = Wrapper.OpModeState.STOPPED
 			is LinearOpModeWrapper -> opMode._state = Wrapper.OpModeState.STOPPED
