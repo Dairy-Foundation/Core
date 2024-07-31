@@ -6,7 +6,7 @@ import dev.frozenmilk.util.units.getVelocity
 import dev.frozenmilk.util.units.homogenise
 import java.util.function.Supplier
 
-class EnhancedDoubleSupplier @JvmOverloads constructor(supplier: Supplier<out Double>, modify: Modifier<Double> = Modifier { x -> x }) : EnhancedNumericSupplier<Double>(supplier, modify), EnhancedComparableNumericSupplier<Double, Conditional<Double>> {
+class EnhancedDoubleSupplier @JvmOverloads constructor(override val supplier: Supplier<out Double>, override val modifier: Modifier<Double> = Modifier { it }) : EnhancedNumericSupplier<Double>(), EnhancedComparableNumericSupplier<Double, Conditional<Double>> {
 	override val velocity get() = previousPositions.homogenise().getVelocity()
 	override val rawVelocity get() = previousPositions.last().getVelocity()
 	override val acceleration get() = previousVelocities.homogenise().getVelocity()

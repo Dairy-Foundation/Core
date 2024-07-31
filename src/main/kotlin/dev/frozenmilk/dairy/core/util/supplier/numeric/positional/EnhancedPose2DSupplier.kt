@@ -7,7 +7,7 @@ import dev.frozenmilk.util.units.homogenise
 import dev.frozenmilk.util.units.position.Pose2D
 import java.util.function.Supplier
 
-class EnhancedPose2DSupplier(supplier: Supplier<out Pose2D>, modifier: Modifier<Pose2D> = Modifier { x -> x }) : EnhancedNumericSupplier<Pose2D>(supplier, modifier) {
+class EnhancedPose2DSupplier(override val supplier: Supplier<out Pose2D>, override val modifier: Modifier<Pose2D> = Modifier { it }) : EnhancedNumericSupplier<Pose2D>() {
 	override val zero = Pose2D()
 	private var offset = zero
 	override var current = supplier.get()

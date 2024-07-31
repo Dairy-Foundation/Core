@@ -1,5 +1,6 @@
 package dev.frozenmilk.dairy.core.util.supplier.numeric
 
+import dev.frozenmilk.dairy.core.Feature
 import dev.frozenmilk.dairy.core.dependency.Dependency
 import dev.frozenmilk.dairy.core.dependency.lazy.Yielding
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
@@ -10,7 +11,9 @@ import java.util.function.Supplier
 /**
  * [deregister]s at the end of the OpMode
  */
-abstract class EnhancedNumericSupplier<N> @JvmOverloads constructor(override val supplier: Supplier<out N>, override val modifier: Modifier<N> = Modifier { x -> x }) : IEnhancedNumericSupplier<N> {
+abstract class EnhancedNumericSupplier<N> : IEnhancedNumericSupplier<N>, Feature {
+	abstract val supplier: Supplier<out N>;
+	open val modifier: Modifier<N> = Modifier { it }
 	/**
 	 * a value that represents 0
 	 */
@@ -35,7 +38,7 @@ abstract class EnhancedNumericSupplier<N> @JvmOverloads constructor(override val
 	}
 	protected val previousPositions by lazy { ArrayDeque(listOf(VelocityPacket(current, current, System.nanoTime() / 1e9, System.nanoTime() / 1e9))) }
 	protected val previousVelocities by lazy { ArrayDeque(listOf(VelocityPacket(zero, zero, System.nanoTime() / 1e9, System.nanoTime() / 1e9))) }
-	protected fun update() {
+	private fun update() {
 		current = modifier.modify(supplier.get())
 		val currentTime = System.nanoTime() / 1e9
 		while (previousPositions.size >= 2 && currentTime - previousPositions[1].deltaTime >= measurementWindow) {
@@ -75,7 +78,7 @@ abstract class EnhancedNumericSupplier<N> @JvmOverloads constructor(override val
 	//
 	// Impl Feature:
 	//
-	override val dependency = Yielding
+	override var dependency: Dependency<*> = Yielding
 
 	init {
 		@Suppress("LeakingThis")
