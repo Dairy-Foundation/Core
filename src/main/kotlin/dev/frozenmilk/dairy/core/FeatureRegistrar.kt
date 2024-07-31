@@ -215,6 +215,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	fun opModePostInit(opMode: Wrapper) {
 		resolveRegistrationQueue()
 		_activeFeatures.reversed().forEach { it.postUserInitHook(opMode) }
+		System.gc()
 	}
 
 	@JvmStatic
