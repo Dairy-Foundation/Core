@@ -155,7 +155,7 @@ class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, pr
 	//
 	// Impl Feature:
 	//
-	override val dependency = Yielding
+	override var dependency: Dependency<*> = Yielding
 
 	init {
 		register()
@@ -185,7 +185,7 @@ class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, pr
 	override fun preUserLoopHook(opMode: Wrapper) = autoUpdatePre()
 	override fun postUserLoopHook(opMode: Wrapper) = autoUpdatePost()
 	override fun preUserStopHook(opMode: Wrapper) = autoUpdatePre()
-	override fun postUserStopHook(opMode: Wrapper) {
+	override fun cleanup(opMode: Wrapper) {
 		deregister()
 	}
 }

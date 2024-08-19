@@ -27,7 +27,15 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	/**
 	 * features that are registered to potentially become active
 	 */
-	private var registeredFeatures: MutableSet<WeakReference<Feature>> = mutableSetOf()
+	private var _registeredFeatures: MutableSet<WeakReference<Feature>> = mutableSetOf()
+
+	/**
+	 * features that are registered to potentially become active.
+	 *
+	 * makes a copy of [_registeredFeatures]
+	 */
+	@JvmStatic
+	val registeredFeatures: List<Feature> = _registeredFeatures.mapNotNull { it.get() }
 
 	/**
 	 * intermediary collection of features that need to be checked to be added to the active pool
@@ -44,6 +52,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	/**
 	 * creates a list of features that have been activated via [resolveDependencies]
 	 */
+	@JvmStatic
 	val activeFeatures
 		get() = _activeFeatures.toList()
 
@@ -84,9 +93,9 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	 */
 	@JvmStatic
 	fun registerFeature(feature: Feature) {
-		if (registeredFeatures.any { it.get() == feature }) return
+		if (_registeredFeatures.any { it.get() == feature }) return
 		val weakRef = WeakReference(feature)
-		registeredFeatures.add(weakRef)
+		_registeredFeatures.add(weakRef)
 		if (!opModeActive) return
 		registrationQueue.add(weakRef to true)
 	}
@@ -111,8 +120,8 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 				.forEach { (feature, _) ->
 					RobotLog.vv(TAG, "Deactivating Feature: ${feature::class.java.simpleName}")
 					_activeFeatures.remove(feature.get())
-					registeredFeatures.remove(
-							registeredFeatures.first {
+					_registeredFeatures.remove(
+							_registeredFeatures.first {
 								it.get() == feature.get()
 							}
 					)
@@ -140,14 +149,16 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	 */
 	@JvmStatic
 	fun checkFeatures(vararg features: Feature) {
-		throw DependencyResolutionException(
-			resolveDependencies(
-				activeOpModeWrapper,
-				features.toMutableSet(),
-				_activeFeatures.toMutableSet(),
-			)
-				.mapNotNull { (k, v) -> k to (v?.message ?: return@mapNotNull null) }
+		val res = resolveDependencies(
+			activeOpModeWrapper,
+			features.toMutableSet(),
+			_activeFeatures.toMutableSet(),
 		)
+			.mapNotNull { (k, v) ->
+				val message = v?.message ?: return@mapNotNull null
+				k to message
+			}
+		if (res.isNotEmpty()) throw DependencyResolutionException(res)
 	}
 
 	private val opModeManagerCell = LateInitCell<OpModeManagerImpl>()
@@ -172,7 +183,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	}
 
 	private fun cleanFeatures() {
-		registeredFeatures = registeredFeatures.filter { it.get() != null }.toMutableSet()
+		_registeredFeatures = _registeredFeatures.filter { it.get() != null }.toMutableSet()
 	}
 
 	override fun onOpModePreInit(opMode: OpMode) {
@@ -193,7 +204,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		}
 		opModeActive = true
 
-		registrationQueue.addAll(registeredFeatures.map{ it to true })
+		registrationQueue.addAll(_registeredFeatures.map{ it to true })
 		resolveRegistrationQueue()
 
 		RobotLog.vv(TAG, "Initing opmode with the following active features:")
@@ -282,8 +293,11 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		// we expose our own hook, rather than this one
 		resolveRegistrationQueue()
 		// empty active listeners and active flags
-		_activeFeatures.clear()
 		opModeActive = false
+		// we need to run feature cleanup
+		_activeFeatures.reversed().forEach { it.cleanup(activeOpModeWrapper) }
+		// then clear them
+		_activeFeatures.clear()
 		activeOpModeMirroredCell.safeGet()?.invalidate() // we need to kill the previous OpMode, so they can't reuse it, todo test
 		System.gc()
 	}

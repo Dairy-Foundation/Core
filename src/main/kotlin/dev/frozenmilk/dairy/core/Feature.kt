@@ -18,7 +18,7 @@ interface Feature {
 	/**
 	 * the dependencies required by this Feature for it to be successfully enabled
 	 */
-	val dependency: Dependency<*>
+	var dependency: Dependency<*>
 
 	fun preUserInitHook(opMode: Wrapper) {}
 
@@ -38,7 +38,21 @@ interface Feature {
 
 	fun preUserStopHook(opMode: Wrapper) {}
 
+	/**
+	 * will not get run if [opMode] crashed
+	 *
+	 * @see cleanup
+	 */
 	fun postUserStopHook(opMode: Wrapper) {}
+
+	/**
+	 * runs after [opMode] stops, regardless of it crashed or not
+	 *
+	 * at this point, [FeatureRegistrar.opModeActive] will be false
+	 *
+	 * @see postUserStopHook
+	 */
+	fun cleanup(opMode: Wrapper) {}
 
 	fun register(): Feature { return also { FeatureRegistrar.registerFeature(this) } }
 
