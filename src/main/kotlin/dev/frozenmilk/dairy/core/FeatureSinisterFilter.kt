@@ -13,7 +13,7 @@ private object FeatureSinisterFilter : SinisterFilter {
 	override fun filter(clazz: Class<*>) {
 		clazz.staticInstancesOf(Feature::class.java)
 				.forEach {
-					RobotLog.vv("FeatureSinisterFilter", "found feature instance: ${it::class.java.simpleName}")
+					RobotLog.vv("DairyCore > FeatureSinisterFilter", "found feature instance: ${it::class.java.simpleName}")
 					FeatureRegistrar.registerFeature(it)
 				}
 	}
