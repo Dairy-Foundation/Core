@@ -77,7 +77,7 @@ publishing {
 		register<MavenPublication>("release") {
 			groupId = "dev.frozenmilk.dairy"
 			artifactId = "Core"
-			version = "1.1.1"
+			version = "1.0.0"
 
 			afterEvaluate {
 				from(components["release"])
