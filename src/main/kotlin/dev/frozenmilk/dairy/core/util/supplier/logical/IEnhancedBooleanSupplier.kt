@@ -1,10 +1,10 @@
 package dev.frozenmilk.dairy.core.util.supplier.logical
 
 import dev.frozenmilk.dairy.core.Feature
-import java.util.function.Supplier
+import java.util.function.BooleanSupplier
 
 @Suppress("INAPPLICABLE_JVM_NAME")
-interface IEnhancedBooleanSupplier : Feature {
+interface IEnhancedBooleanSupplier<SELF: IEnhancedBooleanSupplier<SELF>> : Feature {
 	@get:JvmName("toggleTrue")
 	val toggleTrue: Boolean
 
@@ -44,7 +44,7 @@ interface IEnhancedBooleanSupplier : Feature {
 	 *
 	 * @param debounce is applied to both the rising and falling edges
 	 */
-	fun debounce(debounce: Double): IEnhancedBooleanSupplier
+	fun debounce(debounce: Double): SELF
 
 	/**
 	 * non-mutating
@@ -52,68 +52,68 @@ interface IEnhancedBooleanSupplier : Feature {
 	 * @param rising is applied to the rising edge
 	 * @param falling is applied to the falling edge
 	 */
-	fun debounce(rising: Double, falling: Double): IEnhancedBooleanSupplier
+	fun debounce(rising: Double, falling: Double): SELF
 
 	/**
 	 * non-mutating
 	 *
 	 * @param debounce is applied to the rising edge
 	 */
-	fun debounceRisingEdge(debounce: Double): IEnhancedBooleanSupplier
+	fun debounceRisingEdge(debounce: Double): SELF
 
 	/**
 	 * non-mutating
 	 *
 	 * @param debounce is applied to the falling edge
 	 */
-	fun debounceFallingEdge(debounce: Double): IEnhancedBooleanSupplier
+	fun debounceFallingEdge(debounce: Double): SELF
 
 	/**
 	 * non-mutating
 	 *
 	 * @return a new IEnhancedBooleanSupplier that combines the two conditions
 	 */
-	infix fun and(booleanSupplier: Supplier<Boolean>): IEnhancedBooleanSupplier
+	infix fun and(booleanSupplier: BooleanSupplier): SELF
 
 	/**
 	 * non-mutating
 	 *
 	 * @return a new IEnhancedBooleanSupplier that combines the two conditions
 	 */
-	infix fun and(booleanSupplier: IEnhancedBooleanSupplier): IEnhancedBooleanSupplier
+	infix fun and(booleanSupplier: IEnhancedBooleanSupplier<*>): SELF
 
 	/**
 	 * non-mutating
 	 *
 	 * @return a new IEnhancedBooleanSupplier that combines the two conditions
 	 */
-	infix fun or(booleanSupplier: Supplier<Boolean>): IEnhancedBooleanSupplier
+	infix fun or(booleanSupplier: BooleanSupplier): SELF
 
 	/**
 	 * non-mutating
 	 *
 	 * @return a new IEnhancedBooleanSupplier that combines the two conditions
 	 */
-	infix fun or(booleanSupplier: IEnhancedBooleanSupplier): IEnhancedBooleanSupplier
+	infix fun or(booleanSupplier: IEnhancedBooleanSupplier<*>): SELF
 
 	/**
 	 * non-mutating
 	 *
 	 * @return a new IEnhancedBooleanSupplier that combines the two conditions
 	 */
-	infix fun xor(booleanSupplier: Supplier<Boolean>): IEnhancedBooleanSupplier
+	infix fun xor(booleanSupplier: BooleanSupplier): SELF
 
 	/**
 	 * non-mutating
 	 *
 	 * @return a new IEnhancedBooleanSupplier that combines the two conditions
 	 */
-	infix fun xor(booleanSupplier: IEnhancedBooleanSupplier): IEnhancedBooleanSupplier
+	infix fun xor(booleanSupplier: IEnhancedBooleanSupplier<*>): IEnhancedBooleanSupplier<SELF>
 
 	/**
 	 * non-mutating
 	 *
 	 * @return a new IEnhancedBooleanSupplier that has the inverse of this, and keeps the debounce information
 	 */
-	operator fun not(): IEnhancedBooleanSupplier
+	operator fun not(): SELF
 }

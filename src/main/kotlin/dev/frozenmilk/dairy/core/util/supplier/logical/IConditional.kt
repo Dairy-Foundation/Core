@@ -20,5 +20,5 @@ interface IConditional<T : Comparable<T>> {
 	 * @return self, for chaining
 	 */
 	fun greaterThanEqualTo(value: T): IConditional<T>
-	fun bind(): IEnhancedBooleanSupplier
+	fun bind(): IEnhancedBooleanSupplier<*>
 }

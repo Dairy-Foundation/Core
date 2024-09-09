@@ -1,31 +1,29 @@
 package dev.frozenmilk.dairy.core.util.supplier.numeric.positional
 
 import dev.frozenmilk.dairy.core.util.supplier.numeric.EnhancedNumericSupplier
-import dev.frozenmilk.util.modifier.Modifier
 import dev.frozenmilk.util.units.getVelocity
 import dev.frozenmilk.util.units.homogenise
-import dev.frozenmilk.util.units.position.Pose2D
+import dev.frozenmilk.util.units.position.DistancePose2D
 import java.util.function.Supplier
 
-class EnhancedPose2DSupplier(override val supplier: Supplier<out Pose2D>, override val modifier: Modifier<Pose2D> = Modifier { it }) : EnhancedNumericSupplier<Pose2D>() {
-	override val zero = Pose2D()
+@Suppress("INAPPLICABLE_JVM_NAME")
+class EnhancedPose2DSupplier(override val supplier: Supplier<out DistancePose2D>) : EnhancedNumericSupplier<DistancePose2D>() {
+	override val zero = DistancePose2D()
 	private var offset = zero
-	override var current = supplier.get()
-	override var position
+	override var currentState = supplier.get()
+	@get:JvmName("state")
+	@set:JvmName("state")
+	override var state
 		get() = get() - offset
 		set(value) {
-			offset = current - value
+			offset = currentState - value
 		}
+	@get:JvmName("velocity")
 	override val velocity get() = previousPositions.homogenise().getVelocity()
+	@get:JvmName("rawVelocity")
 	override val rawVelocity get() = previousPositions.last().getVelocity()
+	@get:JvmName("acceleration")
 	override val acceleration get() = previousVelocities.homogenise().getVelocity()
+	@get:JvmName("rawAcceleration")
 	override val rawAcceleration get() = previousVelocities.last().getVelocity()
-	override fun applyModifier(modifier: Modifier<Pose2D>) = EnhancedPose2DSupplier(supplier) { modifier.modify(this.modifier.modify(it)) }
-	override fun setModifier(modifier: Modifier<Pose2D>) = EnhancedPose2DSupplier(supplier, modifier)
-	override fun <N2> merge(supplier: Supplier<out N2>, merge: (Pose2D, N2) -> Pose2D) = EnhancedPose2DSupplier({ merge(get(), supplier.get()) }, modifier)
-	override fun findErrorPosition(target: Pose2D) = target - position
-	override fun findErrorVelocity(target: Pose2D) = target - velocity
-	override fun findErrorRawVelocity(target: Pose2D) = target - rawVelocity
-	override fun findErrorAcceleration(target: Pose2D) = target - acceleration
-	override fun findErrorRawAcceleration(target: Pose2D) = target - rawAcceleration
 }

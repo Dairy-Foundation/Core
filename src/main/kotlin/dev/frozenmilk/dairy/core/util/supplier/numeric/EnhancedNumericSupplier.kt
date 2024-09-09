@@ -4,7 +4,6 @@ import dev.frozenmilk.dairy.core.Feature
 import dev.frozenmilk.dairy.core.dependency.Dependency
 import dev.frozenmilk.dairy.core.dependency.lazy.Yielding
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
-import dev.frozenmilk.util.modifier.Modifier
 import dev.frozenmilk.util.units.VelocityPacket
 import java.util.function.Supplier
 
@@ -12,8 +11,7 @@ import java.util.function.Supplier
  * [deregister]s at the end of the OpMode
  */
 abstract class EnhancedNumericSupplier<N> : IEnhancedNumericSupplier<N>, Feature {
-	abstract val supplier: Supplier<out N>;
-	open val modifier: Modifier<N> = Modifier { it }
+	abstract val supplier: Supplier<out N>
 	/**
 	 * a value that represents 0
 	 */
@@ -21,7 +19,7 @@ abstract class EnhancedNumericSupplier<N> : IEnhancedNumericSupplier<N>, Feature
 	/**
 	 * internal handler for current measurement
 	 */
-	protected abstract var current: N
+	protected abstract var currentState: N
 
 	/**
 	 * non-raw velocity is measured across a window of this width, in seconds
@@ -36,15 +34,15 @@ abstract class EnhancedNumericSupplier<N> : IEnhancedNumericSupplier<N>, Feature
 	override fun invalidate() {
 		valid = false
 	}
-	protected val previousPositions by lazy { ArrayDeque(listOf(VelocityPacket(current, current, System.nanoTime() / 1e9, System.nanoTime() / 1e9))) }
+	protected val previousPositions by lazy { ArrayDeque(listOf(VelocityPacket(currentState, currentState, System.nanoTime() / 1e9, System.nanoTime() / 1e9))) }
 	protected val previousVelocities by lazy { ArrayDeque(listOf(VelocityPacket(zero, zero, System.nanoTime() / 1e9, System.nanoTime() / 1e9))) }
 	private fun update() {
-		current = modifier.modify(supplier.get())
+		currentState = supplier.get()
 		val currentTime = System.nanoTime() / 1e9
 		while (previousPositions.size >= 2 && currentTime - previousPositions[1].deltaTime >= measurementWindow) {
 			previousPositions.removeFirst()
 		}
-		previousPositions.addLast(VelocityPacket(previousPositions.last().end, current, previousPositions.last().endTime, currentTime))
+		previousPositions.addLast(VelocityPacket(previousPositions.last().end, currentState, previousPositions.last().endTime, currentTime))
 		while (previousVelocities.size >= 2 && currentTime - previousVelocities[1].deltaTime >= measurementWindow) {
 			previousVelocities.removeFirst()
 		}
@@ -55,24 +53,16 @@ abstract class EnhancedNumericSupplier<N> : IEnhancedNumericSupplier<N>, Feature
 			update()
 			valid = true
 		}
-		return current
+		return currentState
 	}
 
-	override fun component(motionComponent: MotionComponents) =
+	override fun get(motionComponent: MotionComponents) =
 			when (motionComponent) {
-				MotionComponents.POSITION -> position
+				MotionComponents.STATE -> state
 				MotionComponents.VELOCITY -> velocity
 				MotionComponents.RAW_VELOCITY -> rawVelocity
 				MotionComponents.ACCELERATION -> acceleration
 				MotionComponents.RAW_ACCELERATION -> rawAcceleration
-			}
-	override fun componentError(motionComponent: MotionComponents, target: N) =
-			when (motionComponent) {
-				MotionComponents.POSITION -> findErrorPosition(target)
-				MotionComponents.VELOCITY -> findErrorVelocity(target)
-				MotionComponents.RAW_VELOCITY -> findErrorRawVelocity(target)
-				MotionComponents.ACCELERATION -> findErrorAcceleration(target)
-				MotionComponents.RAW_ACCELERATION -> findErrorRawAcceleration(target)
 			}
 
 	//
@@ -86,30 +76,27 @@ abstract class EnhancedNumericSupplier<N> : IEnhancedNumericSupplier<N>, Feature
 	}
 
 	/**
-	 * if this automatically updates, by calling [invalidate] and [get]
+	 * if [state] is automatically recalculated each loop
+	 *
+	 * ensures that the calculation is updated every loop by:
+	 * - [get]ing the output (ensuring that it is evaluated if it hadn't been before)
+	 * - [invalidate]ing the output (ensuring that it will be re-evaluated on-demand)
+	 *
+	 * should most likely be left true
 	 */
-	override var autoUpdates = true
-	private fun autoUpdatePre() {
-		if (autoUpdates) {
+	var autoCalculates = true
+	private fun autoCalculatePost() {
+		if (autoCalculates) {
+			invalidate()
 			get()
 		}
 	}
-	private fun autoUpdatePost() {
-		if (autoUpdates) {
-			invalidate()
-		}
-	}
 
-	override fun preUserInitHook(opMode: Wrapper) = autoUpdatePre()
-	override fun postUserInitHook(opMode: Wrapper) = autoUpdatePost()
-	override fun preUserInitLoopHook(opMode: Wrapper) = autoUpdatePre()
-	override fun postUserInitLoopHook(opMode: Wrapper) = autoUpdatePost()
-	override fun preUserStartHook(opMode: Wrapper) = autoUpdatePre()
-	override fun postUserStartHook(opMode: Wrapper) = autoUpdatePost()
-	override fun preUserLoopHook(opMode: Wrapper) = autoUpdatePre()
-	override fun postUserLoopHook(opMode: Wrapper) = autoUpdatePost()
-	override fun preUserStopHook(opMode: Wrapper) = autoUpdatePre()
-	override fun postUserStopHook(opMode: Wrapper) {
+	override fun postUserInitHook(opMode: Wrapper) = autoCalculatePost()
+	override fun postUserInitLoopHook(opMode: Wrapper) = autoCalculatePost()
+	override fun postUserStartHook(opMode: Wrapper) = autoCalculatePost()
+	override fun postUserLoopHook(opMode: Wrapper) = autoCalculatePost()
+	override fun cleanup(opMode: Wrapper) {
 		deregister()
 	}
 }

@@ -1,7 +1,7 @@
 package dev.frozenmilk.dairy.core.util.supplier.numeric
 
 enum class MotionComponents {
-	POSITION,
+	STATE,
 	VELOCITY,
 	RAW_VELOCITY,
 	ACCELERATION,

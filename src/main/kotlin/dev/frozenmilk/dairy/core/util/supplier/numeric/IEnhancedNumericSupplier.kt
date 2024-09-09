@@ -1,23 +1,37 @@
 package dev.frozenmilk.dairy.core.util.supplier.numeric
 
-import dev.frozenmilk.util.modifier.Modifier
-import java.util.function.Supplier
-
+@Suppress("INAPPLICABLE_JVM_NAME")
 interface IEnhancedNumericSupplier<N> : MotionComponentSupplier<N> {
 	/**
-	 * position
+	 * state
 	 */
-	var position: N
+	@get:JvmName("state")
+	@set:JvmName("state")
+	var state: N
 
 	/**
 	 * velocity with a filter applied by looking at velocity over the last [measurementWindow] seconds
 	 */
+	@get:JvmName("velocity")
 	val velocity: N
 
 	/**
 	 * [velocity] with no filter applied
 	 */
+	@get:JvmName("rawVelocity")
 	val rawVelocity: N
+
+	/**
+	 * acceleration with a filter applied by looking at acceleration over the last [measurementWindow] seconds
+	 */
+	@get:JvmName("acceleration")
+	val acceleration: N
+
+	/**
+	 * [acceleration] with no filter applied
+	 */
+	@get:JvmName("rawAcceleration")
+	val rawAcceleration: N
 
 	/**
 	 * non-raw velocity and acceleration is measured across a window of this width, in seconds
@@ -27,46 +41,7 @@ interface IEnhancedNumericSupplier<N> : MotionComponentSupplier<N> {
 	var measurementWindow: Double
 
 	/**
-	 * acceleration with a filter applied by looking at acceleration over the last [measurementWindow] seconds
-	 */
-	val acceleration: N
-
-	/**
-	 * [acceleration] with no filter applied
-	 */
-	val rawAcceleration: N
-
-	/**
-	 * if this automatically updates, by calling [invalidate] and determining [position]
-	 */
-	var autoUpdates: Boolean
-
-	/**
 	 * allows invalidation of the cache manually
 	 */
 	fun invalidate()
-	fun findErrorPosition(target: N): N
-	fun findErrorVelocity(target: N): N
-	fun findErrorRawVelocity(target: N): N
-	fun findErrorAcceleration(target: N): N
-	fun findErrorRawAcceleration(target: N): N
-	fun <N2> merge(supplier: Supplier<out N2>, merge: (N, N2) -> N): IEnhancedNumericSupplier<N>
-
-	/**
-	 * applies another modifier on top of this supplier
-	 *
-	 * non-mutating
-	 *
-	 * @see setModifier
-	 */
-	fun applyModifier(modifier: Modifier<N>): IEnhancedNumericSupplier<N>
-
-	/**
-	 * non-mutating
-	 *
-	 * overrides the previous modifier
-	 *
-	 * @see applyModifier
-	 */
-	fun setModifier(modifier: Modifier<N>): IEnhancedNumericSupplier<N>
 }

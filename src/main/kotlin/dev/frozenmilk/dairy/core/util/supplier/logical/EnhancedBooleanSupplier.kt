@@ -3,15 +3,16 @@ package dev.frozenmilk.dairy.core.util.supplier.logical
 import dev.frozenmilk.dairy.core.dependency.Dependency
 import dev.frozenmilk.dairy.core.dependency.lazy.Yielding
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
-import java.util.function.Supplier
+import java.util.function.BooleanSupplier
 
 /**
  * [deregister]s at the end of an OpMode
  */
 @Suppress("INAPPLICABLE_JVM_NAME")
-class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, private val risingDebounce: Long, private val fallingDebounce: Long) : IEnhancedBooleanSupplier {
-	constructor(booleanSupplier: Supplier<Boolean>) : this(booleanSupplier, 0, 0)
-	private var previous = booleanSupplier.get()
+class EnhancedBooleanSupplier private constructor(private val booleanSupplier: BooleanSupplier, private val risingDebounce: Long, private val fallingDebounce: Long) : IEnhancedBooleanSupplier<EnhancedBooleanSupplier> {
+	constructor(booleanSupplier: BooleanSupplier, risingDebounce: Double, fallingDebounce: Double) : this(booleanSupplier, (risingDebounce * 1E9).toLong(), (fallingDebounce * 1E9).toLong())
+	constructor(booleanSupplier: BooleanSupplier) : this(booleanSupplier, 0, 0)
+	private var previous = booleanSupplier.asBoolean
 	private var current = previous
 	private var _toggleTrue = current
 	@get:JvmName("toggleTrue")
@@ -25,15 +26,15 @@ class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, pr
 	private fun update() {
 		previous = current
 		val time = System.nanoTime()
-		if(!current && booleanSupplier.get()){
-			if(time - timeMarker > risingDebounce) {
+		if(!current && booleanSupplier.asBoolean){
+			if(time - timeMarker >= risingDebounce) {
 				current = true
 				_toggleTrue = !_toggleTrue
 				timeMarker = time
 			}
 		}
-		else if (current && !booleanSupplier.get()) {
-			if (time - timeMarker > fallingDebounce) {
+		else if (current && !booleanSupplier.asBoolean) {
+			if (time - timeMarker >= fallingDebounce) {
 				current = false
 				_toggleFalse = !_toggleFalse
 				timeMarker = time
@@ -111,46 +112,49 @@ class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, pr
 	 *
 	 * @return a new EnhancedBooleanSupplier that combines the two conditions
 	 */
-	override infix fun and(booleanSupplier: Supplier<Boolean>) = EnhancedBooleanSupplier { this.state and booleanSupplier.get() }
-	/**
-	 * non-mutating
-	 *
-	 * @return a new EnhancedBooleanSupplier that combines the two conditions
-	 */
-	override infix fun and(booleanSupplier: IEnhancedBooleanSupplier) = EnhancedBooleanSupplier { this.state and booleanSupplier.state }
+	override infix fun and(booleanSupplier: BooleanSupplier) = EnhancedBooleanSupplier { this.state && booleanSupplier.asBoolean }
 
 	/**
 	 * non-mutating
 	 *
 	 * @return a new EnhancedBooleanSupplier that combines the two conditions
 	 */
-	override infix fun or(booleanSupplier: Supplier<Boolean>) = EnhancedBooleanSupplier { this.state or booleanSupplier.get() }
-	/**
-	 * non-mutating
-	 *
-	 * @return a new EnhancedBooleanSupplier that combines the two conditions
-	 */
-	override infix fun or(booleanSupplier: IEnhancedBooleanSupplier) = EnhancedBooleanSupplier { this.state or booleanSupplier.state }
+	override infix fun and(booleanSupplier: IEnhancedBooleanSupplier<*>) = EnhancedBooleanSupplier { this.state && booleanSupplier.state }
 
 	/**
 	 * non-mutating
 	 *
 	 * @return a new EnhancedBooleanSupplier that combines the two conditions
 	 */
-	override infix fun xor(booleanSupplier: Supplier<Boolean>) = EnhancedBooleanSupplier { this.state xor booleanSupplier.get() }
+	override fun or(booleanSupplier: BooleanSupplier) = EnhancedBooleanSupplier { this.state || booleanSupplier.asBoolean }
+
 	/**
 	 * non-mutating
 	 *
 	 * @return a new EnhancedBooleanSupplier that combines the two conditions
 	 */
-	override infix fun xor(booleanSupplier: IEnhancedBooleanSupplier) = EnhancedBooleanSupplier { this.state xor booleanSupplier.state }
+	override infix fun or(booleanSupplier: IEnhancedBooleanSupplier<*>) = EnhancedBooleanSupplier { this.state || booleanSupplier.state }
+
+	/**
+	 * non-mutating
+	 *
+	 * @return a new EnhancedBooleanSupplier that combines the two conditions
+	 */
+	override infix fun xor(booleanSupplier: BooleanSupplier) = EnhancedBooleanSupplier { this.state xor booleanSupplier.asBoolean }
+
+	/**
+	 * non-mutating
+	 *
+	 * @return a new EnhancedBooleanSupplier that combines the two conditions
+	 */
+	override infix fun xor(booleanSupplier: IEnhancedBooleanSupplier<*>) = EnhancedBooleanSupplier { this.state xor booleanSupplier.state }
 
 	/**
 	 * non-mutating
 	 *
 	 * @return a new EnhancedBooleanSupplier that has the inverse of this, and keeps the debounce information
 	 */
-	override operator fun not() = EnhancedBooleanSupplier ({ !this.booleanSupplier.get() }, risingDebounce, fallingDebounce)
+	override operator fun not() = EnhancedBooleanSupplier({ !this.state }, risingDebounce, fallingDebounce)
 
 	//
 	// Impl Feature:
@@ -165,26 +169,17 @@ class EnhancedBooleanSupplier(private val booleanSupplier: Supplier<Boolean>, pr
 	 * if this automatically updates, by calling [invalidate] and [state]
 	 */
 	override var autoUpdates = true
-	private fun autoUpdatePre() {
-		if (autoUpdates) {
-			state
-		}
-	}
 	private fun autoUpdatePost() {
 		if (autoUpdates) {
 			invalidate()
+			state
 		}
 	}
 
-	override fun preUserInitHook(opMode: Wrapper) = autoUpdatePre()
 	override fun postUserInitHook(opMode: Wrapper) = autoUpdatePost()
-	override fun preUserInitLoopHook(opMode: Wrapper) = autoUpdatePre()
 	override fun postUserInitLoopHook(opMode: Wrapper) = autoUpdatePost()
-	override fun preUserStartHook(opMode: Wrapper) = autoUpdatePre()
 	override fun postUserStartHook(opMode: Wrapper) = autoUpdatePost()
-	override fun preUserLoopHook(opMode: Wrapper) = autoUpdatePre()
 	override fun postUserLoopHook(opMode: Wrapper) = autoUpdatePost()
-	override fun preUserStopHook(opMode: Wrapper) = autoUpdatePre()
 	override fun cleanup(opMode: Wrapper) {
 		deregister()
 	}
