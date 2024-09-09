@@ -9,23 +9,23 @@ import dev.frozenmilk.util.cell.LazyCell
 import java.util.function.Supplier
 
 /**
- * A [LazyCell] that is invalidated and initialised on the init of an OpMode
+ * A [LazyCell] that is eagerly initialised on the init of an OpMode
  *
  * unlike an [OpModeLazyCell], this is suitable for use in a persistent context,
- * where this shouldn't automatically deregister
+ * where this shouldn't automatically [deregister]
  *
- * @see OpModeLazyCell for use in an op mode
+ * @see OpModeLazyCell for use in an OpMode
  */
 class OpModeFreshLazyCell<T>(supplier: Supplier<T>) : LazyCell<T>(supplier), Feature {
     override var dependency: Dependency<*> = Yielding
 
     override fun get(): T {
-        if(!initialised() && !FeatureRegistrar.opModeActive) throw IllegalStateException("Attempted to evaluate contents of OpModeFreshLazyCell while no opmode active")
+        if(!initialised && !FeatureRegistrar.opModeRunning) throw IllegalStateException("Attempted to evaluate contents of OpModeFreshLazyCell while no opmode active")
         return super.get()
     }
 
     init {
-        FeatureRegistrar.registerFeature(this)
+        register()
     }
 
     override fun preUserInitHook(opMode: Wrapper) {

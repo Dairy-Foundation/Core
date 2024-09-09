@@ -13,6 +13,7 @@ import dev.frozenmilk.dairy.core.wrapper.LinearOpModeWrapper
 import dev.frozenmilk.dairy.core.wrapper.OpModeWrapper
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
 import dev.frozenmilk.sinister.apphooks.OnCreateEventLoop
+import dev.frozenmilk.sinister.inheritsAnnotation
 import dev.frozenmilk.util.cell.LateInitCell
 import dev.frozenmilk.util.cell.LazyCell
 import dev.frozenmilk.util.cell.MirroredCell
@@ -61,7 +62,8 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	 */
 	@JvmStatic
 	@Volatile
-	var opModeActive: Boolean = false
+	@get:JvmName("isOpModeRunning")
+	var opModeRunning: Boolean = false
 		private set
 
 	@JvmStatic
@@ -78,7 +80,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	private val activeOpModeWrapperCell = LateInitCell<Wrapper>()
 
 	/**
-	 * the currently active OpMode, contents may be undefined if [opModeActive] does not return true
+	 * the currently active OpMode, contents may be undefined if [opModeRunning] does not return true
 	 */
 	@JvmStatic
 	var activeOpModeWrapper by activeOpModeWrapperCell
@@ -96,7 +98,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		if (_registeredFeatures.any { it.get() == feature }) return
 		val weakRef = WeakReference(feature)
 		_registeredFeatures.add(weakRef)
-		if (!opModeActive) return
+		if (!opModeRunning) return
 		registrationQueue.add(weakRef to true)
 	}
 
@@ -112,27 +114,33 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	 * if this [feature] is attached for [activeOpModeWrapper]
 	 */
 	@JvmStatic
-	fun isAttached(feature: Feature) = _activeFeatures.contains(feature)
+	fun isFeatureActive(feature: Feature) = _activeFeatures.contains(feature)
 
+	private var logDependencyResolutionFailures = false
 	private fun resolveRegistrationQueue() {
 		if (registrationQueue.isEmpty()) return
 		registrationQueue.filter { !it.second }
 				.forEach { (feature, _) ->
 					RobotLog.vv(TAG, "Deactivating Feature: ${feature::class.java.simpleName}")
 					_activeFeatures.remove(feature.get())
-					_registeredFeatures.remove(
-							_registeredFeatures.first {
-								it.get() == feature.get()
-							}
-					)
+					_registeredFeatures.firstOrNull {
+						it.get() == feature.get()
+					}?.let {
+						_registeredFeatures.remove(it)
+					}
 				}
 		val toResolve = registrationQueue.filter { it.second }.mapNotNull { it.first.get() }.toSet() // makes a copy of the set
 		val resolved = _activeFeatures.toMutableSet()
-		resolveDependencies(
+		val failed = resolveDependencies(
 				activeOpModeWrapper,
 				toResolve.toMutableSet(),
 				resolved,
 		)
+			.mapNotNull { (k, v) ->
+				val message = v?.message ?: return@mapNotNull null
+				k to message
+			}
+		if (logDependencyResolutionFailures && failed.isNotEmpty()) RobotLog.ee(TAG, "These dependencies where unresolved for these reasons:\n%s", DependencyResolutionException(failed))
 		resolved.intersect(toResolve).forEach {
 			RobotLog.vv(TAG, "Activating Feature: ${it::class.java.simpleName}")
 			_activeFeatures.add(it)
@@ -144,8 +152,6 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	 * ensures that each feature could be activated, if not, will throw a descriptive error about why it isn't
 	 *
 	 * an optional dependency resolution diagnostic tool
-	 *
-	 * todo: log the output of errors on normal dependency resolution
 	 */
 	@JvmStatic
 	fun checkFeatures(vararg features: Feature) {
@@ -202,7 +208,8 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 				wrapper
 			}
 		}
-		opModeActive = true
+		logDependencyResolutionFailures = opMode.javaClass.inheritsAnnotation(LogDependencyResolutionExceptions::class.java)
+		opModeRunning = true
 
 		registrationQueue.addAll(_registeredFeatures.map{ it to true })
 		resolveRegistrationQueue()
@@ -293,7 +300,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		// we expose our own hook, rather than this one
 		resolveRegistrationQueue()
 		// empty active listeners and active flags
-		opModeActive = false
+		opModeRunning = false
 		// we need to run feature cleanup
 		_activeFeatures.reversed().forEach { it.cleanup(activeOpModeWrapper) }
 		// then clear them
@@ -301,4 +308,6 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		activeOpModeMirroredCell.safeGet()?.invalidate() // we need to kill the previous OpMode, so they can't reuse it, todo test
 		System.gc()
 	}
+
+	annotation class LogDependencyResolutionExceptions
 }

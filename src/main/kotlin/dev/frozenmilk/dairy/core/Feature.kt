@@ -48,7 +48,7 @@ interface Feature {
 	/**
 	 * runs after [opMode] stops, regardless of it crashed or not
 	 *
-	 * at this point, [FeatureRegistrar.opModeActive] will be false
+	 * at this point, [FeatureRegistrar.opModeRunning] will be false
 	 *
 	 * @see postUserStopHook
 	 */
@@ -58,5 +58,8 @@ interface Feature {
 
 	fun deregister(): Feature { return also { FeatureRegistrar.deregisterFeature(this) } }
 
-	fun isAttached() = FeatureRegistrar.isAttached(this)
+	val active
+		@Suppress("INAPPLICABLE_JVM_NAME")
+		@JvmName("isActive")
+		get() = FeatureRegistrar.isFeatureActive(this)
 }

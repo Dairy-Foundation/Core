@@ -8,8 +8,6 @@ import dev.frozenmilk.sinister.targeting.WideSearch
 private object FeatureSinisterFilter : SinisterFilter {
 	override val targets = WideSearch()
 
-	override fun init() {}
-
 	override fun filter(clazz: Class<*>) {
 		clazz.staticInstancesOf(Feature::class.java)
 				.forEach {
