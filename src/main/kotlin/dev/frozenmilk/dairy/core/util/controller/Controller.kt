@@ -4,95 +4,89 @@ import dev.frozenmilk.dairy.core.Feature
 import dev.frozenmilk.dairy.core.dependency.Dependency
 import dev.frozenmilk.dairy.core.dependency.lazy.Yielding
 import dev.frozenmilk.dairy.core.util.controller.calculation.ControllerCalculation
-import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
+import dev.frozenmilk.dairy.core.util.controller.implementation.MotionComponentConsumer
+import dev.frozenmilk.dairy.core.util.supplier.numeric.CachedMotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.numeric.EnhancedNumericSupplier
+import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponents
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
-import dev.frozenmilk.util.modifier.Modifier
 import java.util.function.Consumer
 import java.util.function.Supplier
 
-abstract class Controller<T> @JvmOverloads constructor(
-	var targetSupplier: MotionComponentSupplier<out T>,
-	var inputSupplier: MotionComponentSupplier<T>,
-	var motionComponent: MotionComponents,
-	var toleranceEpsilon: T,
-	var outputConsumer: Consumer<T> = Consumer {},
-	var controllerCalculation: ControllerCalculation<T>,
-	override val modifier: Modifier<T>
+@Suppress("INAPPLICABLE_JVM_NAME")
+abstract class Controller<T : Any>
+@JvmOverloads
+constructor(
+	val targetSupplier: MotionComponentSupplier<out T>,
+	val stateSupplier: MotionComponentSupplier<out T>,
+	val errorSupplier: CachedMotionComponentSupplier<out T>,
+	var toleranceEpsilon: MotionComponentSupplier<out T>,
+	var outputConsumer: MotionComponentConsumer<T> = MotionComponentConsumer {},
+	val controllerCalculation: ControllerCalculation<T>,
 ) : EnhancedNumericSupplier<T>(), Feature {
+	constructor(
+		targetSupplier: MotionComponentSupplier<out T>,
+		stateSupplier: MotionComponentSupplier<out T>,
+		errorSupplier: CachedMotionComponentSupplier<out T>,
+		toleranceEpsilon: MotionComponentSupplier<out T>,
+		outputConsumer: Consumer<in T>,
+		controllerCalculation: ControllerCalculation<T>,
+	) : this(
+		targetSupplier,
+		stateSupplier,
+		errorSupplier,
+		toleranceEpsilon,
+		{ outputConsumer.accept(it.get(MotionComponents.STATE)) },
+		controllerCalculation,
+	)
+
 	private var previousTime = System.nanoTime()
 	final override val supplier: Supplier<out T> = Supplier {
 		val currentTime = System.nanoTime()
 		val deltaTime = (currentTime - previousTime) / 1e9
-		val target = targetSupplier.component(motionComponent)
-		val res = modifier.modify(controllerCalculation.evaluate(zero, inputSupplier.component(motionComponent), target, inputSupplier.componentError(motionComponent, target), deltaTime))
+		errorSupplier.reset()
+		val res = controllerCalculation.evaluate(zero, stateSupplier, targetSupplier, errorSupplier, deltaTime)
 		previousTime = currentTime
 		res
 	}
-	override var current: T = supplier.get()
+	override var currentState: T = supplier.get()
 
 	/**
 	 * the current output of the controller
 	 */
-	abstract override var position: T
+	@get:JvmName("state")
+	@set:JvmName("state")
+	abstract override var state: T
 
 	/**
 	 * @return if this controller has finished within variance of [toleranceEpsilon]
 	 */
-	abstract fun finished(toleranceEpsilon: T): Boolean
+	abstract fun finished(toleranceEpsilon: MotionComponentSupplier<out T>): Boolean
 
 	/**
 	 * [finished] but uses internal [toleranceEpsilon]
 	 */
 	fun finished() = finished(toleranceEpsilon)
 
-	abstract var target: T
+	fun update() = outputConsumer.accept(this)
 
-	fun update() = outputConsumer.accept(component(motionComponent))
 	/**
 	 * if this automatically updates in [dev.frozenmilk.dairy.core.wrapper.Wrapper.OpModeState.ACTIVE] (loop), by calling [update]
 	 *
 	 * if this is false, the controller will not update [outputConsumer] automatically.
 	 *
-	 * @see autoUpdates
+	 * @see autoCalculates
 	 */
 	var enabled = true
 
-	/**
-	 * if [position] is automatically recalculated each loop, and [invalidate]ing it at the start of each loop,
-	 *
-	 * should most likely be left true
-	 *
-	 * @see enabled
-	 */
-	override var autoUpdates = true
-	private fun autoUpdatePre() {
-		if (autoUpdates) {
-			invalidate()
-		}
-	}
-	private fun autoUpdatePost() {
-		if (autoUpdates) {
-			get()
-		}
-	}
-
 	override var dependency: Dependency<*> = Yielding
 
-	override fun preUserInitHook(opMode: Wrapper) {}
-	override fun postUserInitHook(opMode: Wrapper) {}
-	override fun preUserStartHook(opMode: Wrapper) = autoUpdatePre()
-	override fun postUserStartHook(opMode: Wrapper) = autoUpdatePost()
-	override fun preUserInitLoopHook(opMode: Wrapper) = autoUpdatePre()
-	override fun postUserInitLoopHook(opMode: Wrapper) = autoUpdatePost()
-	override fun preUserLoopHook(opMode: Wrapper) = autoUpdatePre()
-	override fun postUserLoopHook(opMode: Wrapper) {
-		autoUpdatePost()
+	override fun postUserInitLoopHook(opMode: Wrapper) {
 		if (enabled) update()
+		super<EnhancedNumericSupplier>.postUserInitLoopHook(opMode)
 	}
-	override fun preUserStopHook(opMode: Wrapper) {}
-	override fun postUserStopHook(opMode: Wrapper) {
-		deregister()
+	override fun postUserLoopHook(opMode: Wrapper) {
+		if (enabled) update()
+		super<EnhancedNumericSupplier>.postUserLoopHook(opMode)
 	}
 }

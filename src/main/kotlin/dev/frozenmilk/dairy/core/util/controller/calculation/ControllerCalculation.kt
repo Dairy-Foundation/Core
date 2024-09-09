@@ -1,19 +1,68 @@
 package dev.frozenmilk.dairy.core.util.controller.calculation
 
-@FunctionalInterface
-fun interface ControllerCalculation<T> : ControllerComponent<T, T> {
+import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
+import org.jetbrains.annotations.Contract
+
+interface ControllerCalculation<T: Any> : ControllerComponent<T, T> {
 	/**
-	 * @param accumulation the thus far accumulated outputs of [ControllerCalculation]s, it is important to return this value in the result
-	 * @param currentState the current state of the system, dependant on [dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponents]
+	 * Should be called every loop if this is in use, but it will not be evaluated.
+	 * @see evaluate
+	 *
+	 * E.g. If this is in a branch, and this arm of the branch is not to be [evaluate]d, this will be [update]d instead.
+	 *
+	 * Used to perform necessary loop-by-loop updates to internal state, i.e. time deltas.
+	 *
+	 * @param accumulation the thus far accumulated outputs of [ControllerCalculation]s
+	 * @param state the current state of the system
 	 * @param target the target of the system
-	 * @param error the error of the system, this ensures that special cases for error are handled (e.g. in [dev.frozenmilk.util.units.angle.Angle]s)
+	 * @param deltaTime change in time, measured in seconds
+	 */
+	fun update(accumulation: T, state: MotionComponentSupplier<out T>, target: MotionComponentSupplier<out T>, error: MotionComponentSupplier<out T>, deltaTime: Double)
+
+	/**
+	 * Only gets called when the actual result of calculation this represents is needed.
+	 * @see update
+	 *
+	 * E.g. If this is in a branch, and this arm of the branch is not to be [evaluate]d, this will be [update]d instead.
+	 *
+	 * @param accumulation the thus far accumulated outputs of [ControllerCalculation]s
+	 * @param state the current state of the system
+	 * @param target the target of the system
+	 * @param error the error between target and state
 	 * @param deltaTime change in time, measured in seconds
 	 *
 	 * @return [accumulation] + output
 	 */
-	override fun evaluate(accumulation: T, currentState: T, target: T, error: T, deltaTime: Double): T
+	override fun evaluate(accumulation: T, state: MotionComponentSupplier<out T>, target: MotionComponentSupplier<out T>, error: MotionComponentSupplier<out T>, deltaTime: Double): T
 
-	operator fun plus(toAdd: ControllerCalculation<T>) = ControllerCalculation<T> { accumulation, currentState, target, error, deltaTime ->
-		toAdd.evaluate(evaluate(accumulation, currentState, target, error, deltaTime), currentState, target, error, deltaTime)
+	/**
+	 * called by the end user to notify this component that it should reset its internal state back to its starting defaults
+	 */
+	fun reset()
+
+	operator fun plus(toAdd: ControllerCalculation<T>): ControllerCalculation<T> = object : ControllerCalculation<T> {
+		override fun update(
+			accumulation: T,
+			state: MotionComponentSupplier<out T>,
+			target: MotionComponentSupplier<out T>,
+			error: MotionComponentSupplier<out T>,
+			deltaTime: Double
+		) {
+			this@ControllerCalculation.update(accumulation, state, target, error, deltaTime)
+			toAdd.update(accumulation, state, target, error, deltaTime)
+		}
+
+		override fun evaluate(
+			accumulation: T,
+			state: MotionComponentSupplier<out T>,
+			target: MotionComponentSupplier<out T>,
+			error: MotionComponentSupplier<out T>,
+			deltaTime: Double
+		): T = toAdd.evaluate(this@ControllerCalculation.evaluate(accumulation, state, target, error, deltaTime), state, target, error, deltaTime)
+
+		override fun reset() {
+			this@ControllerCalculation.reset()
+			toAdd.reset()
+		}
 	}
 }

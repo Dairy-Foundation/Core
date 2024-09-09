@@ -2,13 +2,12 @@ package dev.frozenmilk.dairy.core.util.controller.implementation
 
 import dev.frozenmilk.dairy.core.util.controller.Controller
 import dev.frozenmilk.dairy.core.util.controller.calculation.ControllerCalculation
-import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
-import dev.frozenmilk.dairy.core.util.supplier.logical.Conditional
 import dev.frozenmilk.dairy.core.util.supplier.numeric.CachedMotionComponentSupplier
-import dev.frozenmilk.dairy.core.util.supplier.numeric.EnhancedComparableNumericSupplier
+import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponents
 import dev.frozenmilk.util.units.getVelocity
 import dev.frozenmilk.util.units.homogenise
+import dev.frozenmilk.util.units.position.DoubleVector2D
 import java.util.function.Consumer
 import kotlin.math.absoluteValue
 
@@ -18,7 +17,7 @@ import kotlin.math.absoluteValue
  * or regenerate for each OpMode (which must be done if this is built from regenerated resourced, like motors or encoders)
  */
 @Suppress("INAPPLICABLE_JVM_NAME")
-class DoubleController : Controller<Double>, EnhancedComparableNumericSupplier<Double, Conditional<Double>>{
+class DoubleVectorController : Controller<DoubleVector2D> {
 	/**
 	 * @param targetSupplier supplier for the target position
 	 * @param stateSupplier supplier for the system state
@@ -28,16 +27,16 @@ class DoubleController : Controller<Double>, EnhancedComparableNumericSupplier<D
 	 */
 	@JvmOverloads
 	constructor(
-		targetSupplier: MotionComponentSupplier<out Double>,
-		stateSupplier: MotionComponentSupplier<out Double>,
-		toleranceEpsilon: MotionComponentSupplier<out Double>,
-		outputConsumer: MotionComponentConsumer<Double> = MotionComponentConsumer {},
-		controllerCalculation: ControllerCalculation<Double>,
+		targetSupplier: MotionComponentSupplier<out DoubleVector2D>,
+		stateSupplier: MotionComponentSupplier<out DoubleVector2D>,
+		toleranceEpsilon: MotionComponentSupplier<out DoubleVector2D>,
+		outputConsumer: MotionComponentConsumer<DoubleVector2D> = MotionComponentConsumer {},
+		controllerCalculation: ControllerCalculation<DoubleVector2D>,
 	) : super(
 		targetSupplier,
 		stateSupplier,
 		CachedMotionComponentSupplier {
-			targetSupplier.get(it) - stateSupplier.get(it)
+			targetSupplier[it] - stateSupplier[it]
 		},
 		toleranceEpsilon,
 		outputConsumer,
@@ -51,16 +50,16 @@ class DoubleController : Controller<Double>, EnhancedComparableNumericSupplier<D
 	 * @param controllerCalculation [ControllerCalculation] used to transform the input of this system into [state]
 	 */
 	constructor(
-		targetSupplier: MotionComponentSupplier<out Double>,
-		stateSupplier: MotionComponentSupplier<out Double>,
-		toleranceEpsilon: MotionComponentSupplier<out Double>,
-		outputConsumer: Consumer<in Double>,
-		controllerCalculation: ControllerCalculation<Double>,
+		targetSupplier: MotionComponentSupplier<out DoubleVector2D>,
+		stateSupplier: MotionComponentSupplier<out DoubleVector2D>,
+		toleranceEpsilon: MotionComponentSupplier<out DoubleVector2D>,
+		outputConsumer: Consumer<in DoubleVector2D>,
+		controllerCalculation: ControllerCalculation<DoubleVector2D>,
 	) : super(
 		targetSupplier,
 		stateSupplier,
 		CachedMotionComponentSupplier {
-			targetSupplier.get(it) - stateSupplier.get(it)
+			targetSupplier[it] - stateSupplier[it]
 		},
 		toleranceEpsilon,
 		outputConsumer,
@@ -70,22 +69,21 @@ class DoubleController : Controller<Double>, EnhancedComparableNumericSupplier<D
 	//
 	// Controller
 	//
-	override fun finished(toleranceEpsilon: MotionComponentSupplier<out Double>) =
+	override fun finished(toleranceEpsilon: MotionComponentSupplier<out DoubleVector2D>) =
 		MotionComponents.entries.all {
-			val error = errorSupplier.get(it).absoluteValue
-			val tolerance = toleranceEpsilon.get(it)
-			error.isNaN() || tolerance.isNaN() || error <= tolerance
+			val error = errorSupplier[it].magnitude
+			val tolerance = toleranceEpsilon[it].magnitude
+			error.isNaN() || tolerance.isNaN() || error.absoluteValue <= tolerance
 		}
 
 	//
 	// EnhancedNumericSupplier
 	//
-	override val zero = 0.0
+	override val zero = DoubleVector2D()
 	private var offset = zero
-
 	@get:JvmName("state")
 	@set:JvmName("state")
-	override var state: Double
+	override var state: DoubleVector2D
 		get() = get() - offset
 		set(value) {
 			offset = currentState - value
@@ -98,13 +96,4 @@ class DoubleController : Controller<Double>, EnhancedComparableNumericSupplier<D
 	override val acceleration get() = previousVelocities.homogenise().getVelocity()
 	@get:JvmName("rawAcceleration")
 	override val rawAcceleration get() = previousVelocities.last().getVelocity()
-
-	//
-	// Comparable
-	//
-	override fun conditionalBindState() = Conditional(this::state)
-	override fun conditionalBindVelocity() = Conditional(this::velocity)
-	override fun conditionalBindVelocityRaw() = Conditional(this::rawVelocity)
-	override fun conditionalBindAcceleration() = Conditional(this::acceleration)
-	override fun conditionalBindAccelerationRaw() = Conditional(this::rawAcceleration)
 }
