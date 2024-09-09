@@ -1,5 +1,6 @@
 package dev.frozenmilk.dairy.testrt;
 
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.jetbrains.annotations.NotNull;
@@ -9,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * `@RunWith(OpModeTestRunner.class)`
  */
-public abstract class TestOpMode extends OpMode implements Test {
+public abstract class TestLinearOpMode extends LinearOpMode implements Test {
 	private boolean advanceToStart = true;
 	private boolean advanceToStop = true;
 	
@@ -31,13 +32,7 @@ public abstract class TestOpMode extends OpMode implements Test {
 		this.advanceToStop = advanceToStop;
 	}
 	
-	@Override
 	@NotNull
+	@Override
 	public final OpMode getOpMode() { return this; }
-	
-	@Override
-	public void init() {}
-	
-	@Override
-	public void loop() {}
 }

@@ -1,9 +1,12 @@
 package android.util;
 
+import java.util.Locale;
+
 /**
  * mocks the android log class, for use by RobotLog
  */
 public class Log {
+	private static final long start = System.nanoTime();
 	public static int d(String tag, String msg) {
 		System.out.println("DEBUG: " + tag + ": " + msg);
 		return 0;
@@ -26,7 +29,7 @@ public class Log {
 	
 	// add other methods if required...
 	public static int println(int priority, String tag, String msg) {
-		String str = "|" + priority + "| " + tag + ": " + msg;
+		String str = "|" + String.format(Locale.getDefault(), "%.3f", (System.nanoTime() - start) / 1.0e9) + "| " + tag + ": " + msg;
 		System.out.println(str);
 		return str.getBytes().length;
 	}

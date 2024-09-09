@@ -41,7 +41,8 @@ android {
 
 dependencies {
 	testFixturesApi("junit:junit:4.13.2")
-	testFixturesApi("org.firstinspires.ftc:RobotCore:9.1.0")
+	testFixturesImplementation("io.github.classgraph:classgraph:4.8.174")
+	testFixturesApi("org.firstinspires.ftc:RobotCore:10.0.0")
 
 	//noinspection GradleDependency
 	implementation("androidx.appcompat:appcompat:1.2.0")
