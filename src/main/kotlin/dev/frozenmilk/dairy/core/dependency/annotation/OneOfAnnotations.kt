@@ -1,11 +1,12 @@
 package dev.frozenmilk.dairy.core.dependency.annotation
 
 import dev.frozenmilk.dairy.core.dependency.resolution.DependencyResolutionException
+import java.util.function.Function
 
-class OneOfAnnotations(annotations: Set<Class<out Annotation>>) : AnnotationDependency<Annotation>({ collection ->
-	val classCollection = collection.associateWith { it::class.java }
+class OneOfAnnotations(annotations: Set<Class<out Annotation>>) : AnnotationDependency<Annotation>(Function { collection ->
+	val classCollection = collection.associateWith { it.javaClass }
 	val intersect = classCollection.filterValues { clazz -> annotations.any { it.isAssignableFrom(clazz) } }
-	if (intersect.size == 1) intersect.keys.first()
+	if (intersect.size == 1) return@Function intersect.keys.first()
 	if (intersect.isNotEmpty()) {
 		throw DependencyResolutionException(
 				intersect.filterValues { annotations.contains(it) }
