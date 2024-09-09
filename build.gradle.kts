@@ -48,9 +48,9 @@ dependencies {
 
 	api(project(":Sinister"))
 
-	compileOnly("org.firstinspires.ftc:RobotCore:9.1.0")
-	compileOnly("org.firstinspires.ftc:Hardware:9.1.0")
-	compileOnly("org.firstinspires.ftc:FtcCommon:9.1.0")
+	compileOnly("org.firstinspires.ftc:RobotCore:10.0.0")
+	compileOnly("org.firstinspires.ftc:Hardware:10.0.0")
+	compileOnly("org.firstinspires.ftc:FtcCommon:10.0.0")
 }
 
 publishing {
