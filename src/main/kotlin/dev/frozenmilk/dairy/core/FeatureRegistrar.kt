@@ -214,7 +214,7 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 		registrationQueue.addAll(_registeredFeatures.map{ it to true })
 		resolveRegistrationQueue()
 
-		RobotLog.vv(TAG, "Initing opmode with the following active features:")
+		RobotLog.vv(TAG, "Initing opmode ${activeOpModeWrapper.name} with the following active features:")
 		RobotLog.vv(TAG, _activeFeatures.map { it.toString() }.toString())
 	}
 
@@ -297,10 +297,10 @@ object FeatureRegistrar : OpModeManagerNotifier.Notifications {
 	}
 
 	override fun onOpModePostStop(opMode: OpMode) {
-		// we expose our own hook, rather than this one
 		resolveRegistrationQueue()
 		// empty active listeners and active flags
 		opModeRunning = false
+		RobotLog.vv(TAG, "cleaning up ${activeOpModeWrapper.name}")
 		// we need to run feature cleanup
 		_activeFeatures.reversed().forEach { it.cleanup(activeOpModeWrapper) }
 		// then clear them
