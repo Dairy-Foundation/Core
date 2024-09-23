@@ -1,7 +1,6 @@
 package dev.frozenmilk.dairy.core.util.supplier.logical
 
 import org.jetbrains.annotations.Contract
-import java.util.function.BooleanSupplier
 import java.util.function.Supplier
 
 class Conditional<T: Comparable<T>> private constructor(private val supplier: Supplier<T>, private val domainCheckers: List<(T) -> Boolean> = emptyList(), private val domainClosureBuilder: DomainClosureBuilder<T> = DomainClosureBuilder()) : IConditional<T> {
