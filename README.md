@@ -1,4 +1,4 @@
-<a href="/Core" target="_blank">
+<a href="https://repo.dairy.foundation/#/releases/dev/frozenmilk/dairy/Core" target="_blank">
 <img src="https://repo.dairy.foundation/api/badge/latest/releases/dev/frozenmilk/dairy/Core?color=40c14a&name=Core" />
 </a>
 
