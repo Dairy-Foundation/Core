@@ -66,7 +66,7 @@ class DoubleMotionProfile(beginState: State) : MotionProfile<Double> {
         fun obeys(constraints: Constraints): Boolean = (abs(velocity) <= constraints.maxVelocity)
 
         operator fun invoke(accelSegment: AccelSegment, reversed: Boolean = false): State {
-            val multi = if (reversed) -1 else 1
+            val multi = if (reversed) -1.0 else 1.0
             return State(
                 position + velocity * accelSegment.time * multi + accelSegment.acceleration * accelSegment.time * accelSegment.time / 2.0,
                 velocity + accelSegment.acceleration * accelSegment.time * multi,
@@ -75,8 +75,15 @@ class DoubleMotionProfile(beginState: State) : MotionProfile<Double> {
         }
         operator fun invoke(profile: DoubleMotionProfile, reversed: Boolean = false): State {
             var state = this
-            for (segment in profile.accelSegments) {
-                state = state(segment, reversed)
+            if (reversed) {
+                for (i in profile.accelSegments.size-1 downTo 0) {
+                    state = state(profile.accelSegments[i], reversed = true)
+                }
+            }
+            else {
+                for (segment in profile.accelSegments) {
+                    state = state(segment)
+                }
             }
             return state
         }
@@ -109,7 +116,7 @@ class DoubleMotionProfile(beginState: State) : MotionProfile<Double> {
             if (acceleration.isNaN()) {
                 throw IllegalArgumentException("acceleration of DoubleMotionProfile.AccelSegment must not be NaN.")
             }
-            if (time.isNaN() || time < 0.0) {
+            if (time.isNaN() /* || time < 0.0 */) {
                 throw IllegalArgumentException("time of DoubleMotionProfile.AccelSegment must be non-negative.")
             }
         }
@@ -132,7 +139,7 @@ class DoubleMotionProfile(beginState: State) : MotionProfile<Double> {
     }
 
     private operator fun plusAssign(accelSegment: AccelSegment) {
-        if (accelSegment.time == 0.0) return
+        if (accelSegment.time <= 0.0) return
         accelSegments.add(accelSegment)
         endState = endState(accelSegment).let { State(it.position, it.velocity) }
         totalDuration += accelSegment.time
@@ -178,10 +185,10 @@ class DoubleMotionProfile(beginState: State) : MotionProfile<Double> {
 
     override fun getEndless(t: Double): State {
         if (t <= 0.0) {
-            return State(beginState.position + t * beginState.velocity, beginState.velocity)
+            return State(beginState.position + beginState.velocity * t, beginState.velocity)
         }
         if (t >= totalDuration) {
-            return State(endState.position + (t - totalDuration) * endState.velocity, endState.velocity)
+            return State(endState.position + endState.velocity * (t - totalDuration), endState.velocity)
         }
         return getInBounds(t)
     }
@@ -245,7 +252,11 @@ class DoubleMotionProfile(beginState: State) : MotionProfile<Double> {
             )
             val profile = DoubleMotionProfile(beginState)
             profile += seg1
-            profile += generateProfileObeying(beginState(seg1), endState(seg2, reversed = true), constraints)
+            profile += generateProfileObeying(
+                beginState(seg1).let { State(it.position, it.velocity.coerceIn(-constraints.maxVelocity, constraints.maxVelocity)) },
+                endState(seg2, reversed = true).let { State(it.position, it.velocity.coerceIn(-constraints.maxVelocity, constraints.maxVelocity)) },
+                constraints
+            )
             profile += seg2
             profile.endState = State(endState.position, endState.velocity)
             return profile
@@ -344,10 +355,9 @@ class DoubleMotionProfile(beginState: State) : MotionProfile<Double> {
                 profile += seg2
                 return profile
             }
-            val topVel = sqrt(
-                (2.0 * distance * constraints.maxAcceleration * constraints.maxDeceleration)
-                        / (constraints.maxAcceleration + constraints.maxDeceleration)
-                        + beginEndVel * beginEndVel
+            val topVel = sqrt(distance * 2.0 *
+                    (constraints.maxAcceleration * constraints.maxDeceleration / (constraints.maxAcceleration + constraints.maxDeceleration))
+                    + beginEndVel * beginEndVel
             )
             val profile = DoubleMotionProfile(State(0.0, beginEndVel))
             profile += AccelSegment(constraints.maxAcceleration, (topVel - beginEndVel) / constraints.maxAcceleration)
