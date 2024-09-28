@@ -1,12 +1,13 @@
 package dev.frozenmilk.dairy.core.util.profile.implementation
 
 import dev.frozenmilk.dairy.core.util.profile.MotionProfile
+import dev.frozenmilk.util.units.angle.Angle
+import dev.frozenmilk.util.units.angle.AngleUnits
+import dev.frozenmilk.util.units.angle.Wrapping
 import dev.frozenmilk.util.units.distance.Distance
-import kotlin.math.abs
-import kotlin.math.sign
 import kotlin.math.sqrt
 
-class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
+class AngleMotionProfile(beginState: State) : MotionProfile<Angle> {
     val beginState: State
     private val accelSegments = ArrayList<AccelSegment>()
     var endState: State
@@ -21,19 +22,19 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
     }
 
     class State(
-        position: Distance,
-        velocity: Distance,
-        acceleration: Distance = Distance()
-    ) : MotionProfile.State<Distance> {
+        position: Angle,
+        velocity: Angle,
+        acceleration: Angle = Angle(wrapping = Wrapping.LINEAR)
+    ) : MotionProfile.State<Angle> {
         init {
             if (position.isNaN()) {
-                throw IllegalArgumentException("position of DistanceMotionProfile.State must not be NaN.")
+                throw IllegalArgumentException("position of AngleMotionProfile.State must not be NaN.")
             }
-            if (velocity.isNaN()) {
-                throw IllegalArgumentException("velocity of DistanceMotionProfile.State must not be NaN.")
+            if (velocity.isNaN() || velocity.wrapping != Wrapping.LINEAR) {
+                throw IllegalArgumentException("velocity of AngleMotionProfile.State must not be NaN and must be Linear.")
             }
-            if (acceleration.isNaN()) {
-                throw IllegalArgumentException("acceleration of DistanceMotionProfile.State must not be NaN.")
+            if (acceleration.isNaN() || acceleration.wrapping != Wrapping.LINEAR) {
+                throw IllegalArgumentException("acceleration of AngleMotionProfile.State must not be NaN and must be Linear.")
             }
         }
 
@@ -78,7 +79,7 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
                 accelSegment.acceleration
             )
         }
-        operator fun invoke(profile: DistanceMotionProfile, reversed: Boolean = false): State {
+        operator fun invoke(profile: AngleMotionProfile, reversed: Boolean = false): State {
             var state = this
             if (reversed) {
                 for (i in profile.accelSegments.size-1 downTo 0) {
@@ -95,19 +96,19 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
     }
 
     class Constraints(
-        maxVelocity: Distance,
-        maxAcceleration: Distance,
-        maxDeceleration: Distance
+        maxVelocity: Angle,
+        maxAcceleration: Angle,
+        maxDeceleration: Angle
     ) {
         init {
-            if (maxVelocity.isNaN() || maxVelocity <= Distance()) {
-                throw IllegalArgumentException("maxVelocity of DistanceMotionProfile.Constraints must be positive.")
+            if (maxVelocity.isNaN() || maxVelocity.wrapping != Wrapping.LINEAR || maxVelocity <= Angle(wrapping = Wrapping.LINEAR)) {
+                throw IllegalArgumentException("maxVelocity of AngleMotionProfile.Constraints must be positive and Linear.")
             }
-            if (maxAcceleration.isNaN() || maxAcceleration <= Distance()) {
-                throw IllegalArgumentException("maxAcceleration of DistanceMotionProfile.Constraints must be positive.")
+            if (maxAcceleration.isNaN() || maxAcceleration.wrapping != Wrapping.LINEAR || maxAcceleration <= Angle(wrapping = Wrapping.LINEAR)) {
+                throw IllegalArgumentException("maxAcceleration of AngleMotionProfile.Constraints must be positive and Linear.")
             }
-            if (maxDeceleration.isNaN() || maxDeceleration <= Distance()) {
-                throw IllegalArgumentException("maxDeceleration of DistanceMotionProfile.Constraints must be positive.")
+            if (maxDeceleration.isNaN() || maxDeceleration.wrapping != Wrapping.LINEAR || maxDeceleration <= Angle(wrapping = Wrapping.LINEAR)) {
+                throw IllegalArgumentException("maxDeceleration of AngleMotionProfile.Constraints must be positive and Linear.")
             }
         }
 
@@ -117,16 +118,16 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
     }
 
     class AccelSegment(
-        acceleration: Distance,
+        acceleration: Angle,
         val time: Double
     ) {
-        constructor() : this(Distance(), 0.0)
+        constructor() : this(Angle(wrapping = Wrapping.LINEAR), 0.0)
         init {
-            if (acceleration.isNaN()) {
-                throw IllegalArgumentException("acceleration of DistanceMotionProfile.AccelSegment must not be NaN.")
+            if (acceleration.isNaN() || acceleration.wrapping != Wrapping.LINEAR) {
+                throw IllegalArgumentException("acceleration of AngleMotionProfile.AccelSegment must not be NaN and must be Linear.")
             }
             if (time.isNaN() /* || time < 0.0 */) {
-                throw IllegalArgumentException("time of DistanceMotionProfile.AccelSegment must be non-negative.")
+                throw IllegalArgumentException("time of AngleMotionProfile.AccelSegment must be non-negative.")
             }
         }
 
@@ -140,8 +141,8 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
 
 
     private operator fun unaryPlus() = this
-    private operator fun unaryMinus(): DistanceMotionProfile {
-        val profile = DistanceMotionProfile(-beginState)
+    private operator fun unaryMinus(): AngleMotionProfile {
+        val profile = AngleMotionProfile(-beginState)
         for (segment in accelSegments) {
             profile += -segment
         }
@@ -159,12 +160,12 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
         plusAssign(-accelSegment)
     }
 
-    private operator fun plusAssign(profile: DistanceMotionProfile) {
+    private operator fun plusAssign(profile: AngleMotionProfile) {
         for (segment in profile.accelSegments) {
             plusAssign(segment)
         }
     }
-    private operator fun minusAssign(profile: DistanceMotionProfile) {
+    private operator fun minusAssign(profile: AngleMotionProfile) {
         for (segment in profile.accelSegments) {
             minusAssign(segment)
         }
@@ -209,10 +210,13 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
     companion object {
         fun generateVelProfile(
             beginState: State,
-            endVel: Distance,
+            endVel: Angle,
             constraints: Constraints
-        ): DistanceMotionProfile {
-            return (if (beginState.velocity >= Distance())
+        ): AngleMotionProfile {
+            if (endVel.wrapping != Wrapping.LINEAR) {
+                throw IllegalArgumentException("endVel of AngleMotionProfile.generateVelProfile must be Linear.")
+            }
+            return (if (beginState.velocity >= Angle(wrapping = Wrapping.LINEAR))
                 generateVelProfileNonNegativeBeginVel(beginState, endVel, constraints)
             else -generateVelProfileNonNegativeBeginVel(-beginState, -endVel, constraints)
                     ).also {
@@ -221,24 +225,24 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
         }
 
         fun generateVelProfile(
-            beginVel: Distance,
-            endVel: Distance,
+            beginVel: Angle,
+            endVel: Angle,
             constraints: Constraints
-        ) = generateVelProfile(State(Distance(), beginVel), endVel, constraints)
+        ) = generateVelProfile(State(Angle(wrapping = Wrapping.LINEAR), beginVel), endVel, constraints)
 
         private fun generateVelProfileNonNegativeBeginVel(
             beginState: State,
-            endVel: Distance,
+            endVel: Angle,
             constraints: Constraints
-        ): DistanceMotionProfile {
-            /// promise: beginState.velocity is non-negative
-            val profile = DistanceMotionProfile(beginState)
+        ): AngleMotionProfile {
+            /// promise: beginState.velocity is non-negative, endVel is linear
+            val profile = AngleMotionProfile(beginState)
             if (beginState.velocity == endVel) return profile
             if (beginState.velocity < endVel) {
                 profile += AccelSegment(constraints.maxAcceleration, ((endVel - beginState.velocity) / constraints.maxAcceleration).value)
                 return profile
             }
-            if (endVel >= Distance()) {
+            if (endVel >= Angle(wrapping = Wrapping.LINEAR)) {
                 profile += AccelSegment(-constraints.maxDeceleration, ((beginState.velocity - endVel) / constraints.maxDeceleration).value)
                 return profile
             }
@@ -252,7 +256,7 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
             beginState: State,
             endState: State,
             constraints: Constraints
-        ): DistanceMotionProfile {
+        ): AngleMotionProfile {
             val seg1 = if (beginState.obeys(constraints)) AccelSegment() else AccelSegment(
                 -constraints.maxDeceleration * beginState.velocity.sign,
                 ((beginState.velocity.absoluteValue - constraints.maxVelocity) / constraints.maxDeceleration).value
@@ -261,7 +265,7 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
                 constraints.maxAcceleration * endState.velocity.sign,
                 ((endState.velocity.absoluteValue - constraints.maxVelocity) / constraints.maxAcceleration).value
             )
-            val profile = DistanceMotionProfile(beginState)
+            val profile = AngleMotionProfile(beginState)
             profile += seg1
             profile += generateProfileObeying(
                 beginState(seg1).let { State(it.position, it.velocity.coerceIn(-constraints.maxVelocity, constraints.maxVelocity)) },
@@ -277,13 +281,13 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
             beginState: State,
             endState: State,
             constraints: Constraints
-        ): DistanceMotionProfile {
+        ): AngleMotionProfile {
             /// promise: beginState and endState are within constraints
             val velProfileBeginEnd = generateVelProfile(beginState.velocity, endState.velocity, constraints)
-            val velProfileBeginZero = generateVelProfile(beginState.velocity, Distance(), constraints)
-            val velProfileZeroEnd = generateVelProfile(Distance(), endState.velocity, constraints)
+            val velProfileBeginZero = generateVelProfile(beginState.velocity, Angle(wrapping = Wrapping.LINEAR), constraints)
+            val velProfileZeroEnd = generateVelProfile(Angle(wrapping = Wrapping.LINEAR), endState.velocity, constraints)
 
-            val profileBegin = DistanceMotionProfile(beginState)
+            val profileBegin = AngleMotionProfile(beginState)
             profileBegin += generateSimpleProfile(
                 beginState.velocity,
                 endState(velProfileBeginEnd, reversed = true).position - beginState.position,
@@ -291,7 +295,7 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
             )
             profileBegin += velProfileBeginEnd
 
-            val profileEnd = DistanceMotionProfile(beginState)
+            val profileEnd = AngleMotionProfile(beginState)
             profileEnd += velProfileBeginEnd
             profileEnd += generateSimpleProfile(
                 endState.velocity,
@@ -299,7 +303,7 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
                 constraints
             )
 
-            val profileZero = DistanceMotionProfile(beginState)
+            val profileZero = AngleMotionProfile(beginState)
             profileZero += velProfileBeginZero
             profileZero += generateSimpleProfile(
                 Distance(),
@@ -316,31 +320,43 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
 
 
         private fun generateSimpleProfile(
-            beginEndVel: Distance,
-            distance: Distance,
+            beginEndVel: Angle,
+            distance: Angle,
             constraints: Constraints
-        ): DistanceMotionProfile {
-            /// promise: beginEndVel obeys constraints
-            return if (distance >= Distance())
-                generateSimpleProfileNonNegativeDistance(beginEndVel, distance, constraints)
-            else -generateSimpleProfileNonNegativeDistance(-beginEndVel, -distance, constraints)
+        ): AngleMotionProfile {
+            /// promise: beginEndVel is linear and obeys constraints
+            if (distance.wrapping == Wrapping.LINEAR) {
+                return generateSimpleLinearProfile(beginEndVel, distance, constraints)
+            }
+            val profile1 = generateSimpleLinearProfile(beginEndVel, Angle(unit = AngleUnits.RADIAN, wrapping = Wrapping.LINEAR, value = ))
         }
 
-        private fun generateSimpleProfileNonNegativeDistance(
+        private fun generateSimpleLinearProfile(
+            beginEndVel: Angle,
+            distance: Angle,
+            constraints: Constraints
+        ): AngleMotionProfile {
+            /// promise: beginEndVel is linear and obeys constraints, distance is linear
+            return if (distance >= Distance())
+                generateSimpleLinearProfileNonNegativeDistance(beginEndVel, distance, constraints)
+            else -generateSimpleLinearProfileNonNegativeDistance(-beginEndVel, -distance, constraints)
+        }
+
+        private fun generateSimpleLinearProfileNonNegativeDistance(
             beginEndVel: Distance,
             distance: Distance,
             constraints: Constraints
-        ): DistanceMotionProfile {
+        ): AngleMotionProfile {
             /// promise: beginEndVel obeys constraints, distance is non-negative
-            if (distance == Distance()) return DistanceMotionProfile(State(Distance(), beginEndVel))
+            if (distance == Distance()) return AngleMotionProfile(State(Distance(), beginEndVel))
             if (beginEndVel >= Distance()) {
-                return generateSimpleProfileNonNegativeDistanceAndVel(beginEndVel, distance, constraints)
+                return generateSimpleLinearProfileNonNegativeDistanceAndVel(beginEndVel, distance, constraints)
             }
             val seg1 = AccelSegment(constraints.maxDeceleration, (-beginEndVel / constraints.maxDeceleration).value)
             val seg2 = AccelSegment(-constraints.maxAcceleration, (-beginEndVel / constraints.maxAcceleration).value)
-            val profile = DistanceMotionProfile(State(Distance(), beginEndVel))
+            val profile = AngleMotionProfile(State(Distance(), beginEndVel))
             profile += seg1
-            profile += generateSimpleProfileNonNegativeDistanceAndVel(
+            profile += generateSimpleLinearProfileNonNegativeDistanceAndVel(
                 Distance(),
                 State(distance, beginEndVel).invoke(seg2, reversed = true).position
                 - State(Distance(), beginEndVel).invoke(seg1).position,
@@ -350,17 +366,17 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
             return profile
         }
 
-        private fun generateSimpleProfileNonNegativeDistanceAndVel(
+        private fun generateSimpleLinearProfileNonNegativeDistanceAndVel(
             beginEndVel: Distance,
             distance: Distance,
             constraints: Constraints
-        ): DistanceMotionProfile {
+        ): AngleMotionProfile {
             /// promise: beginEndVel obeys constraints, distance and beginEndVel are non-negative
             val seg1 = AccelSegment(constraints.maxAcceleration, ((constraints.maxVelocity - beginEndVel) / constraints.maxAcceleration).value)
             val seg2 = AccelSegment(-constraints.maxDeceleration, ((constraints.maxVelocity - beginEndVel) / constraints.maxDeceleration).value)
             val state = State(Distance(), beginEndVel).invoke(seg1).invoke(seg2)
             if (state.position <= distance) {
-                val profile = DistanceMotionProfile(State(Distance(), beginEndVel))
+                val profile = AngleMotionProfile(State(Distance(), beginEndVel))
                 profile += seg1
                 profile += AccelSegment(Distance(), ((distance - state.position) / constraints.maxVelocity).value)
                 profile += seg2
@@ -370,7 +386,7 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
                     (constraints.maxAcceleration * constraints.maxDeceleration / (constraints.maxAcceleration + constraints.maxDeceleration))
                     + beginEndVel * beginEndVel
             ).sqrt()
-            val profile = DistanceMotionProfile(State(Distance(), beginEndVel))
+            val profile = AngleMotionProfile(State(Distance(), beginEndVel))
             profile += AccelSegment(constraints.maxAcceleration, ((topVel - beginEndVel) / constraints.maxAcceleration).value)
             profile += AccelSegment(-constraints.maxDeceleration, ((topVel - beginEndVel) / constraints.maxDeceleration).value)
             return profile
