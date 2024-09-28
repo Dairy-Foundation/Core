@@ -74,7 +74,7 @@ class AngleMotionProfile(beginState: State) : MotionProfile<Angle> {
         operator fun invoke(accelSegment: AccelSegment, reversed: Boolean = false): State {
             val multi: Double = if (reversed) -1.0 else 1.0
             return State(
-                position + velocity * accelSegment.time * multi + accelSegment.acceleration * accelSegment.time * accelSegment.time / 2.0,
+                (position + velocity * accelSegment.time * multi + accelSegment.acceleration * accelSegment.time * accelSegment.time / 2.0).into(position.wrapping),
                 velocity + accelSegment.acceleration * accelSegment.time * multi,
                 accelSegment.acceleration
             )
@@ -217,8 +217,8 @@ class AngleMotionProfile(beginState: State) : MotionProfile<Angle> {
                 throw IllegalArgumentException("endVel of AngleMotionProfile.generateVelProfile must be Linear.")
             }
             return (if (beginState.velocity >= Angle(wrapping = Wrapping.LINEAR))
-                generateVelProfileNonNegativeBeginVel(beginState, endVel, constraints)
-            else -generateVelProfileNonNegativeBeginVel(-beginState, -endVel, constraints)
+                generateVelProfileNonNegativeBeginVel(beginState, endVel.intoCommon(), constraints)
+            else -generateVelProfileNonNegativeBeginVel(-beginState, -endVel.intoCommon(), constraints)
                     ).also {
                 it.endState = State(it.endState.position, endVel)
             }
@@ -235,7 +235,7 @@ class AngleMotionProfile(beginState: State) : MotionProfile<Angle> {
             endVel: Angle,
             constraints: Constraints
         ): AngleMotionProfile {
-            /// promise: beginState.velocity is non-negative, endVel is linear
+            /// promise: beginState.velocity is non-negative, endVel is linear and in common unit
             val profile = AngleMotionProfile(beginState)
             if (beginState.velocity == endVel) return profile
             if (beginState.velocity < endVel) {
@@ -290,7 +290,7 @@ class AngleMotionProfile(beginState: State) : MotionProfile<Angle> {
             val profileBegin = AngleMotionProfile(beginState)
             profileBegin += generateSimpleProfile(
                 beginState.velocity,
-                endState(velProfileBeginEnd, reversed = true).position - beginState.position,
+                beginState.position.findError(endState(velProfileBeginEnd, reversed = true).position),
                 constraints
             )
             profileBegin += velProfileBeginEnd
@@ -299,15 +299,15 @@ class AngleMotionProfile(beginState: State) : MotionProfile<Angle> {
             profileEnd += velProfileBeginEnd
             profileEnd += generateSimpleProfile(
                 endState.velocity,
-                endState.position - beginState(velProfileBeginEnd).position,
+                beginState(velProfileBeginEnd).position.findError(endState.position),
                 constraints
             )
 
             val profileZero = AngleMotionProfile(beginState)
             profileZero += velProfileBeginZero
             profileZero += generateSimpleProfile(
-                Distance(),
-                endState(velProfileZeroEnd, reversed = true).position - beginState(velProfileBeginZero).position,
+                Angle(wrapping = Wrapping.LINEAR),
+                beginState(velProfileBeginZero).position.findError(endState(velProfileZeroEnd, reversed = true).position),
                 constraints
             )
             profileZero += velProfileZeroEnd

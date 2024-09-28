@@ -213,8 +213,8 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
             constraints: Constraints
         ): DistanceMotionProfile {
             return (if (beginState.velocity >= Distance())
-                generateVelProfileNonNegativeBeginVel(beginState, endVel, constraints)
-            else -generateVelProfileNonNegativeBeginVel(-beginState, -endVel, constraints)
+                generateVelProfileNonNegativeBeginVel(beginState, endVel.intoCommon(), constraints)
+            else -generateVelProfileNonNegativeBeginVel(-beginState, -endVel.intoCommon(), constraints)
                     ).also {
                 it.endState = State(it.endState.position, endVel)
             }
@@ -231,7 +231,7 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
             endVel: Distance,
             constraints: Constraints
         ): DistanceMotionProfile {
-            /// promise: beginState.velocity is non-negative
+            /// promise: beginState.velocity is non-negative, endVel is in common unit
             val profile = DistanceMotionProfile(beginState)
             if (beginState.velocity == endVel) return profile
             if (beginState.velocity < endVel) {
@@ -320,7 +320,7 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
             distance: Distance,
             constraints: Constraints
         ): DistanceMotionProfile {
-            /// promise: beginEndVel obeys constraints
+            /// promise: beginEndVel obeys constraints, beginEndVel and distance are in common unit
             return if (distance >= Distance())
                 generateSimpleProfileNonNegativeDistance(beginEndVel, distance, constraints)
             else -generateSimpleProfileNonNegativeDistance(-beginEndVel, -distance, constraints)
@@ -331,7 +331,7 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
             distance: Distance,
             constraints: Constraints
         ): DistanceMotionProfile {
-            /// promise: beginEndVel obeys constraints, distance is non-negative
+            /// promise: beginEndVel obeys constraints, distance is non-negative, beginEndVel and distance are in common unit
             if (distance == Distance()) return DistanceMotionProfile(State(Distance(), beginEndVel))
             if (beginEndVel >= Distance()) {
                 return generateSimpleProfileNonNegativeDistanceAndVel(beginEndVel, distance, constraints)
@@ -355,7 +355,7 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
             distance: Distance,
             constraints: Constraints
         ): DistanceMotionProfile {
-            /// promise: beginEndVel obeys constraints, distance and beginEndVel are non-negative
+            /// promise: beginEndVel obeys constraints, distance and beginEndVel are non-negative and in common unit
             val seg1 = AccelSegment(constraints.maxAcceleration, ((constraints.maxVelocity - beginEndVel) / constraints.maxAcceleration).value)
             val seg2 = AccelSegment(-constraints.maxDeceleration, ((constraints.maxVelocity - beginEndVel) / constraints.maxDeceleration).value)
             val state = State(Distance(), beginEndVel).invoke(seg1).invoke(seg2)
