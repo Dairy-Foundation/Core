@@ -3,6 +3,10 @@ package dev.frozenmilk.dairy.core.util.controller.calculation.pid
 import dev.frozenmilk.dairy.core.util.controller.calculation.ControllerCalculation
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponents
+import kotlin.math.abs
+import kotlin.math.absoluteValue
+import kotlin.math.sign
+import kotlin.math.sqrt
 
 abstract class DoubleComponent private constructor() {
 	class P (val motionComponent: MotionComponents, var kP: Double) : ControllerCalculation<Double> {
@@ -22,6 +26,30 @@ abstract class DoubleComponent private constructor() {
 			deltaTime: Double
 		): Double {
 			val res = error.get(motionComponent) * kP
+			return if (res.isNaN()) accumulation
+			else accumulation + res
+		}
+
+		override fun reset() {}
+	}
+	class SqrtP (val motionComponent: MotionComponents, var kSqrtP: Double) : ControllerCalculation<Double> {
+		override fun update(
+			accumulation: Double,
+			state: MotionComponentSupplier<out Double>,
+			target: MotionComponentSupplier<out Double>,
+			error: MotionComponentSupplier<out Double>,
+			deltaTime: Double
+		) {}
+
+		override fun evaluate(
+			accumulation: Double,
+			state: MotionComponentSupplier<out Double>,
+			target: MotionComponentSupplier<out Double>,
+			error: MotionComponentSupplier<out Double>,
+			deltaTime: Double
+		): Double {
+			val err = error[motionComponent]
+			val res = sqrt(err.absoluteValue) * err.sign * kSqrtP
 			return if (res.isNaN()) accumulation
 			else accumulation + res
 		}
