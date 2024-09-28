@@ -2,9 +2,12 @@ package dev.frozenmilk.dairy.core.util.profile.implementation
 
 import dev.frozenmilk.dairy.core.util.profile.MotionProfile
 import dev.frozenmilk.util.units.distance.Distance
+import dev.frozenmilk.util.units.distance.DistanceUnit
+import dev.frozenmilk.util.units.distance.DistanceUnits
 import kotlin.math.abs
 import kotlin.math.sign
 import kotlin.math.sqrt
+import kotlin.random.Random
 
 class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
     val beginState: State
@@ -125,7 +128,7 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
             if (acceleration.isNaN()) {
                 throw IllegalArgumentException("acceleration of DistanceMotionProfile.AccelSegment must not be NaN.")
             }
-            if (time.isNaN() /* || time < 0.0 */) {
+            if (time.isNaN() || (debugMode && time < 0.0)) {
                 throw IllegalArgumentException("time of DistanceMotionProfile.AccelSegment must be non-negative.")
             }
         }
@@ -216,7 +219,7 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
                 generateVelProfileNonNegativeBeginVel(beginState, endVel.intoCommon(), constraints)
             else -generateVelProfileNonNegativeBeginVel(-beginState, -endVel.intoCommon(), constraints)
                     ).also {
-                it.endState = State(it.endState.position, endVel)
+                if (!debugMode) it.endState = State(it.endState.position, endVel)
             }
         }
 
@@ -269,7 +272,7 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
                 constraints
             )
             profile += seg2
-            profile.endState = State(endState.position, endState.velocity)
+            if (!debugMode) profile.endState = State(endState.position, endState.velocity)
             return profile
         }
 
@@ -374,6 +377,48 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
             profile += AccelSegment(constraints.maxAcceleration, ((topVel - beginEndVel) / constraints.maxAcceleration).value)
             profile += AccelSegment(-constraints.maxDeceleration, ((topVel - beginEndVel) / constraints.maxDeceleration).value)
             return profile
+        }
+
+
+        private val debugMode: Boolean = false
+        private fun randomUnit(rng: Random): DistanceUnit
+        {
+            return when(rng.nextInt(0, 5)) {
+                0 -> DistanceUnits.METER
+                1 -> DistanceUnits.CENTIMETER
+                2 -> DistanceUnits.MILLIMETER
+                3 -> DistanceUnits.INCH
+                else -> DistanceUnits.FOOT
+            }
+        }
+        fun randomTest(bound: Double = 100.0, repeat: Int = 1): Double
+        {
+            if (!debugMode) {
+                throw RuntimeException("You shouldn't run a random test with debug off, dude. Not cool.")
+            }
+            var maxError = 0.0
+            val rng = Random(System.currentTimeMillis())
+            for (i in 1..repeat) {
+                val beginState = State(
+                    Distance(randomUnit(rng), rng.nextDouble(-bound, bound)),
+                    Distance(randomUnit(rng), rng.nextDouble(-bound, bound)),
+                    Distance(randomUnit(rng), rng.nextDouble(-bound, bound)),
+                )
+                val endState = State(
+                    Distance(randomUnit(rng), rng.nextDouble(-bound, bound)),
+                    Distance(randomUnit(rng), rng.nextDouble(-bound, bound)),
+                    Distance(randomUnit(rng), rng.nextDouble(-bound, bound)),
+                )
+                val constraints = Constraints(
+                    Distance(randomUnit(rng), rng.nextDouble(1.0, bound)),
+                    Distance(randomUnit(rng), rng.nextDouble(1.0, bound)),
+                    Distance(randomUnit(rng), rng.nextDouble(1.0, bound)),
+                )
+                val profile = generateProfile(beginState, endState, constraints)
+                maxError = maxError.coerceAtLeast(abs((endState.position - profile.endState.position).intoCommon().value))
+                maxError = maxError.coerceAtLeast(abs((endState.velocity - profile.endState.velocity).intoCommon().value))
+            }
+            return maxError
         }
     }
 }

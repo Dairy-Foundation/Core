@@ -2,10 +2,15 @@ package dev.frozenmilk.dairy.core.util.profile.implementation
 
 import dev.frozenmilk.dairy.core.util.profile.MotionProfile
 import dev.frozenmilk.util.units.angle.Angle
+import dev.frozenmilk.util.units.angle.AngleUnit
 import dev.frozenmilk.util.units.angle.AngleUnits
 import dev.frozenmilk.util.units.angle.Wrapping
 import dev.frozenmilk.util.units.distance.Distance
+import dev.frozenmilk.util.units.distance.DistanceUnit
+import dev.frozenmilk.util.units.distance.DistanceUnits
+import kotlin.math.abs
 import kotlin.math.sqrt
+import kotlin.random.Random
 
 class AngleMotionProfile(beginState: State) : MotionProfile<Angle> {
     val beginState: State
@@ -126,7 +131,7 @@ class AngleMotionProfile(beginState: State) : MotionProfile<Angle> {
             if (acceleration.isNaN() || acceleration.wrapping != Wrapping.LINEAR) {
                 throw IllegalArgumentException("acceleration of AngleMotionProfile.AccelSegment must not be NaN and must be Linear.")
             }
-            if (time.isNaN() /* || time < 0.0 */) {
+            if (time.isNaN() || (debugMode && time < 0.0)) {
                 throw IllegalArgumentException("time of AngleMotionProfile.AccelSegment must be non-negative.")
             }
         }
@@ -220,7 +225,7 @@ class AngleMotionProfile(beginState: State) : MotionProfile<Angle> {
                 generateVelProfileNonNegativeBeginVel(beginState, endVel.intoCommon(), constraints)
             else -generateVelProfileNonNegativeBeginVel(-beginState, -endVel.intoCommon(), constraints)
                     ).also {
-                it.endState = State(it.endState.position, endVel)
+                if (!debugMode) it.endState = State(it.endState.position, endVel)
             }
         }
 
@@ -257,6 +262,7 @@ class AngleMotionProfile(beginState: State) : MotionProfile<Angle> {
             endState: State,
             constraints: Constraints
         ): AngleMotionProfile {
+            // note: i force the wrapping mode of beginState.position to be the same as for endState.position
             val seg1 = if (beginState.obeys(constraints)) AccelSegment() else AccelSegment(
                 -constraints.maxDeceleration * beginState.velocity.sign,
                 ((beginState.velocity.absoluteValue - constraints.maxVelocity) / constraints.maxDeceleration).value
@@ -265,15 +271,15 @@ class AngleMotionProfile(beginState: State) : MotionProfile<Angle> {
                 constraints.maxAcceleration * endState.velocity.sign,
                 ((endState.velocity.absoluteValue - constraints.maxVelocity) / constraints.maxAcceleration).value
             )
-            val profile = AngleMotionProfile(beginState)
+            val profile = AngleMotionProfile(beginState.let { State(it.position.into(endState.position.wrapping), it.velocity) })
             profile += seg1
             profile += generateProfileObeying(
-                beginState(seg1).let { State(it.position, it.velocity.coerceIn(-constraints.maxVelocity, constraints.maxVelocity)) },
+                beginState(seg1).let { State(it.position.into(endState.position.wrapping), it.velocity.coerceIn(-constraints.maxVelocity, constraints.maxVelocity)) },
                 endState(seg2, reversed = true).let { State(it.position, it.velocity.coerceIn(-constraints.maxVelocity, constraints.maxVelocity)) },
                 constraints
             )
             profile += seg2
-            profile.endState = State(endState.position, endState.velocity)
+            if (!debugMode) profile.endState = State(endState.position, endState.velocity)
             return profile
         }
 
@@ -282,7 +288,7 @@ class AngleMotionProfile(beginState: State) : MotionProfile<Angle> {
             endState: State,
             constraints: Constraints
         ): AngleMotionProfile {
-            /// promise: beginState and endState are within constraints
+            /// promise: beginState and endState are within constraints, begin and end pos are in the same wrapping mode
             val velProfileBeginEnd = generateVelProfile(beginState.velocity, endState.velocity, constraints)
             val velProfileBeginZero = generateVelProfile(beginState.velocity, Angle(wrapping = Wrapping.LINEAR), constraints)
             val velProfileZeroEnd = generateVelProfile(Angle(wrapping = Wrapping.LINEAR), endState.velocity, constraints)
@@ -400,6 +406,53 @@ class AngleMotionProfile(beginState: State) : MotionProfile<Angle> {
             profile += AccelSegment(constraints.maxAcceleration, ((topVel - beginEndVel) / constraints.maxAcceleration).value)
             profile += AccelSegment(-constraints.maxDeceleration, ((topVel - beginEndVel) / constraints.maxDeceleration).value)
             return profile
+        }
+
+
+        private val debugMode: Boolean = false
+        private fun randomUnit(rng: Random): AngleUnit
+        {
+            return when(rng.nextInt(0, 2)) {
+                0 -> AngleUnits.RADIAN
+                else -> AngleUnits.DEGREE
+            }
+        }
+        private fun randomWrapping(rng: Random): Wrapping
+        {
+            return when(rng.nextInt(0, 3)) {
+                0 -> Wrapping.WRAPPING
+                1 -> Wrapping.RELATIVE
+                else -> Wrapping.LINEAR
+            }
+        }
+        fun randomTest(bound: Double = 100.0, repeat: Int = 1): Double
+        {
+            if (!debugMode) {
+                throw RuntimeException("You shouldn't run a random test with debug off, dude. Not cool.")
+            }
+            var maxError = 0.0
+            val rng = Random(System.currentTimeMillis())
+            for (i in 1..repeat) {
+                val beginState = State(
+                    Angle(randomUnit(rng), randomWrapping(rng), rng.nextDouble(-bound, bound)),
+                    Angle(randomUnit(rng), Wrapping.LINEAR, rng.nextDouble(-bound, bound)),
+                    Angle(randomUnit(rng), Wrapping.LINEAR, rng.nextDouble(-bound, bound)),
+                )
+                val endState = State(
+                    Angle(randomUnit(rng), randomWrapping(rng), rng.nextDouble(-bound, bound)),
+                    Angle(randomUnit(rng), Wrapping.LINEAR, rng.nextDouble(-bound, bound)),
+                    Angle(randomUnit(rng), Wrapping.LINEAR, rng.nextDouble(-bound, bound)),
+                )
+                val constraints = Constraints(
+                    Angle(randomUnit(rng), Wrapping.LINEAR, rng.nextDouble(1.0, bound)),
+                    Angle(randomUnit(rng), Wrapping.LINEAR, rng.nextDouble(1.0, bound)),
+                    Angle(randomUnit(rng), Wrapping.LINEAR, rng.nextDouble(1.0, bound)),
+                )
+                val profile = generateProfile(beginState, endState, constraints)
+                maxError = maxError.coerceAtLeast(abs((profile.endState.position.findError(endState.position)).intoCommon().value))
+                maxError = maxError.coerceAtLeast(abs((profile.endState.velocity.findError(endState.velocity)).intoCommon().value))
+            }
+            return maxError
         }
     }
 }

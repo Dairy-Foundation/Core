@@ -4,6 +4,7 @@ import dev.frozenmilk.dairy.core.util.profile.MotionProfile
 import kotlin.math.abs
 import kotlin.math.sign
 import kotlin.math.sqrt
+import kotlin.random.Random
 
 class DoubleMotionProfile(beginState: State) : MotionProfile<Double> {
     val beginState: State
@@ -116,7 +117,7 @@ class DoubleMotionProfile(beginState: State) : MotionProfile<Double> {
             if (acceleration.isNaN()) {
                 throw IllegalArgumentException("acceleration of DoubleMotionProfile.AccelSegment must not be NaN.")
             }
-            if (time.isNaN() /* || time < 0.0 */) {
+            if (time.isNaN() || (debugMode && time < 0.0)) {
                 throw IllegalArgumentException("time of DoubleMotionProfile.AccelSegment must be non-negative.")
             }
         }
@@ -205,7 +206,7 @@ class DoubleMotionProfile(beginState: State) : MotionProfile<Double> {
                 generateVelProfileNonNegativeBeginVel(beginState, endVel, constraints)
             else -generateVelProfileNonNegativeBeginVel(-beginState, -endVel, constraints)
                     ).also {
-                it.endState = State(it.endState.position, endVel)
+                if (!debugMode) it.endState = State(it.endState.position, endVel)
             }
         }
 
@@ -258,7 +259,7 @@ class DoubleMotionProfile(beginState: State) : MotionProfile<Double> {
                 constraints
             )
             profile += seg2
-            profile.endState = State(endState.position, endState.velocity)
+            if (!debugMode) profile.endState = State(endState.position, endState.velocity)
             return profile
         }
 
@@ -363,6 +364,38 @@ class DoubleMotionProfile(beginState: State) : MotionProfile<Double> {
             profile += AccelSegment(constraints.maxAcceleration, (topVel - beginEndVel) / constraints.maxAcceleration)
             profile += AccelSegment(-constraints.maxDeceleration, (topVel - beginEndVel) / constraints.maxDeceleration)
             return profile
+        }
+
+
+        private val debugMode: Boolean = false
+        fun randomTest(bound: Double = 100.0, repeat: Int = 1): Double
+        {
+            if (!debugMode) {
+                throw RuntimeException("You shouldn't run a random test with debug off, dude. Not cool.")
+            }
+            var maxError = 0.0
+            val rng = Random(System.currentTimeMillis())
+            for (i in 1..repeat) {
+                val beginState = State(
+                    rng.nextDouble(-bound, bound),
+                    rng.nextDouble(-bound, bound),
+                    rng.nextDouble(-bound, bound),
+                )
+                val endState = State(
+                    rng.nextDouble(-bound, bound),
+                    rng.nextDouble(-bound, bound),
+                    rng.nextDouble(-bound, bound),
+                )
+                val constraints = Constraints(
+                    rng.nextDouble(1.0, bound),
+                    rng.nextDouble(1.0, bound),
+                    rng.nextDouble(1.0, bound),
+                )
+                val profile = generateProfile(beginState, endState, constraints)
+                maxError = maxError.coerceAtLeast(abs(endState.position - profile.endState.position))
+                maxError = maxError.coerceAtLeast(abs(endState.velocity - profile.endState.velocity))
+            }
+            return maxError
         }
     }
 }
