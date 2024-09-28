@@ -324,11 +324,21 @@ class AngleMotionProfile(beginState: State) : MotionProfile<Angle> {
             distance: Angle,
             constraints: Constraints
         ): AngleMotionProfile {
-            /// promise: beginEndVel is linear and obeys constraints
+            /// promise: beginEndVel is linear and obeys constraints, beginEndVel and distance are in common unit
             if (distance.wrapping == Wrapping.LINEAR) {
                 return generateSimpleLinearProfile(beginEndVel, distance, constraints)
             }
-            val profile1 = generateSimpleLinearProfile(beginEndVel, Angle(unit = AngleUnits.RADIAN, wrapping = Wrapping.LINEAR, value = ))
+            val profile1 = generateSimpleLinearProfile(
+                beginEndVel,
+                Angle(AngleUnits.RADIAN, Wrapping.LINEAR, distance.intoWrapping().value),
+                constraints
+            )
+            val profile2 = generateSimpleLinearProfile(
+                beginEndVel,
+                Angle(AngleUnits.RADIAN, Wrapping.LINEAR, distance.intoWrapping().value - Math.PI * 2.0),
+                constraints
+            )
+            return if (profile1.totalDuration <= profile2.totalDuration) profile1 else profile2
         }
 
         private fun generateSimpleLinearProfile(
@@ -336,30 +346,30 @@ class AngleMotionProfile(beginState: State) : MotionProfile<Angle> {
             distance: Angle,
             constraints: Constraints
         ): AngleMotionProfile {
-            /// promise: beginEndVel is linear and obeys constraints, distance is linear
-            return if (distance >= Distance())
+            /// promise: beginEndVel and distance are linear and in common unit, beginEndVel obeys constraints
+            return if (distance >= Angle(wrapping = Wrapping.LINEAR))
                 generateSimpleLinearProfileNonNegativeDistance(beginEndVel, distance, constraints)
             else -generateSimpleLinearProfileNonNegativeDistance(-beginEndVel, -distance, constraints)
         }
 
         private fun generateSimpleLinearProfileNonNegativeDistance(
-            beginEndVel: Distance,
-            distance: Distance,
+            beginEndVel: Angle,
+            distance: Angle,
             constraints: Constraints
         ): AngleMotionProfile {
-            /// promise: beginEndVel obeys constraints, distance is non-negative
-            if (distance == Distance()) return AngleMotionProfile(State(Distance(), beginEndVel))
-            if (beginEndVel >= Distance()) {
+            /// promise: beginEndVel and distance are linear and in common unit, beginEndVel obeys constraints, distance is non-negative
+            if (distance == Angle(wrapping = Wrapping.LINEAR)) return AngleMotionProfile(State(Angle(wrapping = Wrapping.LINEAR), beginEndVel))
+            if (beginEndVel >= Angle(wrapping = Wrapping.LINEAR)) {
                 return generateSimpleLinearProfileNonNegativeDistanceAndVel(beginEndVel, distance, constraints)
             }
             val seg1 = AccelSegment(constraints.maxDeceleration, (-beginEndVel / constraints.maxDeceleration).value)
             val seg2 = AccelSegment(-constraints.maxAcceleration, (-beginEndVel / constraints.maxAcceleration).value)
-            val profile = AngleMotionProfile(State(Distance(), beginEndVel))
+            val profile = AngleMotionProfile(State(Angle(wrapping = Wrapping.LINEAR), beginEndVel))
             profile += seg1
             profile += generateSimpleLinearProfileNonNegativeDistanceAndVel(
-                Distance(),
+                Angle(wrapping = Wrapping.LINEAR),
                 State(distance, beginEndVel).invoke(seg2, reversed = true).position
-                - State(Distance(), beginEndVel).invoke(seg1).position,
+                - State(Angle(wrapping = Wrapping.LINEAR), beginEndVel).invoke(seg1).position,
                 constraints
             )
             profile += seg2
@@ -367,18 +377,18 @@ class AngleMotionProfile(beginState: State) : MotionProfile<Angle> {
         }
 
         private fun generateSimpleLinearProfileNonNegativeDistanceAndVel(
-            beginEndVel: Distance,
-            distance: Distance,
+            beginEndVel: Angle,
+            distance: Angle,
             constraints: Constraints
         ): AngleMotionProfile {
-            /// promise: beginEndVel obeys constraints, distance and beginEndVel are non-negative
+            /// promise: beginEndVel and distance are linear, in common unit and non-negative, beginEndVel obeys constraints
             val seg1 = AccelSegment(constraints.maxAcceleration, ((constraints.maxVelocity - beginEndVel) / constraints.maxAcceleration).value)
             val seg2 = AccelSegment(-constraints.maxDeceleration, ((constraints.maxVelocity - beginEndVel) / constraints.maxDeceleration).value)
-            val state = State(Distance(), beginEndVel).invoke(seg1).invoke(seg2)
+            val state = State(Angle(wrapping = Wrapping.LINEAR), beginEndVel).invoke(seg1).invoke(seg2)
             if (state.position <= distance) {
-                val profile = AngleMotionProfile(State(Distance(), beginEndVel))
+                val profile = AngleMotionProfile(State(Angle(wrapping = Wrapping.LINEAR), beginEndVel))
                 profile += seg1
-                profile += AccelSegment(Distance(), ((distance - state.position) / constraints.maxVelocity).value)
+                profile += AccelSegment(Angle(wrapping = Wrapping.LINEAR), ((distance - state.position) / constraints.maxVelocity).value)
                 profile += seg2
                 return profile
             }
@@ -386,7 +396,7 @@ class AngleMotionProfile(beginState: State) : MotionProfile<Angle> {
                     (constraints.maxAcceleration * constraints.maxDeceleration / (constraints.maxAcceleration + constraints.maxDeceleration))
                     + beginEndVel * beginEndVel
             ).sqrt()
-            val profile = AngleMotionProfile(State(Distance(), beginEndVel))
+            val profile = AngleMotionProfile(State(Angle(wrapping = Wrapping.LINEAR), beginEndVel))
             profile += AccelSegment(constraints.maxAcceleration, ((topVel - beginEndVel) / constraints.maxAcceleration).value)
             profile += AccelSegment(-constraints.maxDeceleration, ((topVel - beginEndVel) / constraints.maxDeceleration).value)
             return profile
