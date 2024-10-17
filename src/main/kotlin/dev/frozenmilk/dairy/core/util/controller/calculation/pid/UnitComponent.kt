@@ -29,6 +29,30 @@ abstract class UnitComponent private constructor() {
 
 		override fun reset() {}
 	}
+	class SqrtP <RU: ReifiedUnit<*, RU>> (val motionComponent: MotionComponents, var kSqrtP: Double) : ControllerCalculation<RU> {
+		override fun update(
+			accumulation: RU,
+			state: MotionComponentSupplier<out RU>,
+			target: MotionComponentSupplier<out RU>,
+			error: MotionComponentSupplier<out RU>,
+			deltaTime: Double
+		) {}
+
+		override fun evaluate(
+			accumulation: RU,
+			state: MotionComponentSupplier<out RU>,
+			target: MotionComponentSupplier<out RU>,
+			error: MotionComponentSupplier<out RU>,
+			deltaTime: Double
+		): RU {
+			val err = error[motionComponent]
+			val res = err.intoCommon().absoluteValue.sqrt() * err.sign * kSqrtP
+			return if (res.isNaN()) accumulation
+			else accumulation + res
+		}
+
+		override fun reset() {}
+	}
 	class I <RU: ReifiedUnit<*, RU>> @JvmOverloads constructor(val motionComponent: MotionComponents, var kI: Double, var lowerLimit: RU? = null, var upperLimit: RU? = null) : ControllerCalculation<RU> {
 		var i: RU? = null
 		override fun update(

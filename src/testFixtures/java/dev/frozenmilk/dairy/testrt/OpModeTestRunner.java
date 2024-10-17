@@ -255,19 +255,6 @@ public final class OpModeTestRunner extends BlockJUnit4ClassRunner {
 		return new InvokeRunWrapperTestStatement(method, (Test) test);
 	}
 	
-//	@Override
-//	public void run(final RunNotifier notifier) {
-//		Runnable runnable = () -> super.run(notifier);
-//		Thread thread = new Thread(runnable);
-//		thread.setContextClassLoader(sinisterClassLoaderCell.get());
-//		thread.start();
-//		try {
-//			thread.join();
-//		} catch (InterruptedException e) {
-//			throw new RuntimeException(e);
-//		}
-//	}
-//
 	private static class InvokeRunWrapperTestStatement extends Statement {
 		private final FrameworkMethod testMethod;
 		private final Test test;
