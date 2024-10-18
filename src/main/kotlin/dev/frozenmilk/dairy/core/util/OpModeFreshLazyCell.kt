@@ -29,7 +29,10 @@ class OpModeFreshLazyCell<T>(supplier: Supplier<T>) : LazyCell<T>(supplier), Fea
     }
 
     override fun preUserInitHook(opMode: Wrapper) {
+        safeEvaluate()
+    }
+
+    override fun cleanup(opMode: Wrapper) {
         invalidate()
-        get()
     }
 }
