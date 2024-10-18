@@ -36,8 +36,8 @@ class DoubleController : Controller<Double>, EnhancedComparableNumericSupplier<D
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		CachedMotionComponentSupplier {
-			targetSupplier.get(it) - stateSupplier.get(it)
+		{ targetSupplier, stateSupplier, motionComponent ->
+			targetSupplier[motionComponent] - stateSupplier[motionComponent]
 		},
 		toleranceEpsilon,
 		outputConsumer,
@@ -59,8 +59,8 @@ class DoubleController : Controller<Double>, EnhancedComparableNumericSupplier<D
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		CachedMotionComponentSupplier {
-			targetSupplier.get(it) - stateSupplier.get(it)
+		{ targetSupplier, stateSupplier, motionComponent ->
+			targetSupplier[motionComponent] - stateSupplier[motionComponent]
 		},
 		toleranceEpsilon,
 		outputConsumer,

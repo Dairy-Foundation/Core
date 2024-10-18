@@ -34,8 +34,10 @@ class DistancePoseController : Controller<DistancePose2D> {
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		CachedMotionComponentSupplier {
-			targetSupplier.get(it) - stateSupplier.get(it)
+		{ targetSupplier, stateSupplier, motionComponent ->
+			val (tV, tA) = targetSupplier[motionComponent]
+			val (sV, sA) = stateSupplier[motionComponent]
+			DistancePose2D(tV - sV, tA.findError(sA))
 		},
 		toleranceEpsilon,
 		outputConsumer,
@@ -57,9 +59,9 @@ class DistancePoseController : Controller<DistancePose2D> {
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		CachedMotionComponentSupplier {
-			val (tV, tA) = targetSupplier.get(it)
-			val (sV, sA) = stateSupplier.get(it)
+		{ targetSupplier, stateSupplier, motionComponent ->
+			val (tV, tA) = targetSupplier[motionComponent]
+			val (sV, sA) = stateSupplier[motionComponent]
 			DistancePose2D(tV - sV, tA.findError(sA))
 		},
 		toleranceEpsilon,

@@ -36,8 +36,8 @@ class UnitController<RU: ReifiedUnit<*, RU>> : Controller<RU>, EnhancedComparabl
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		CachedMotionComponentSupplier {
-			targetSupplier[it].findError(stateSupplier[it])
+		{ targetSupplier, stateSupplier, motionComponent ->
+			targetSupplier[motionComponent].findError(stateSupplier[motionComponent])
 		},
 		toleranceEpsilon,
 		outputConsumer,
@@ -59,8 +59,8 @@ class UnitController<RU: ReifiedUnit<*, RU>> : Controller<RU>, EnhancedComparabl
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		CachedMotionComponentSupplier {
-			targetSupplier[it].findError(stateSupplier[it])
+		{ targetSupplier, stateSupplier, motionComponent ->
+			targetSupplier[motionComponent].findError(stateSupplier[motionComponent])
 		},
 		toleranceEpsilon,
 		outputConsumer,

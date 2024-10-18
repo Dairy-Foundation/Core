@@ -34,8 +34,8 @@ class DistanceVectorController : Controller<DistanceVector2D> {
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		CachedMotionComponentSupplier {
-			targetSupplier[it] - stateSupplier[it]
+		{ targetSupplier, stateSupplier, motionComponent ->
+			targetSupplier[motionComponent] - stateSupplier[motionComponent]
 		},
 		toleranceEpsilon,
 		outputConsumer,
@@ -57,8 +57,8 @@ class DistanceVectorController : Controller<DistanceVector2D> {
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		CachedMotionComponentSupplier {
-			targetSupplier[it] - stateSupplier[it]
+		{ targetSupplier, stateSupplier, motionComponent ->
+			targetSupplier[motionComponent] - stateSupplier[motionComponent]
 		},
 		toleranceEpsilon,
 		outputConsumer,

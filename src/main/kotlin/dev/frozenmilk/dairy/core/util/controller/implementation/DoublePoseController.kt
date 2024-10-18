@@ -34,8 +34,10 @@ class DoublePoseController : Controller<DoublePose2D> {
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		CachedMotionComponentSupplier {
-			targetSupplier.get(it) - stateSupplier.get(it)
+		{ targetSupplier, stateSupplier, motionComponent ->
+			val (tV, tA) = targetSupplier[motionComponent]
+			val (sV, sA) = stateSupplier[motionComponent]
+			DoublePose2D(tV - sV, tA.findError(sA))
 		},
 		toleranceEpsilon,
 		outputConsumer,
@@ -57,9 +59,9 @@ class DoublePoseController : Controller<DoublePose2D> {
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		CachedMotionComponentSupplier {
-			val (tV, tA) = targetSupplier.get(it)
-			val (sV, sA) = stateSupplier.get(it)
+		{ targetSupplier, stateSupplier, motionComponent ->
+			val (tV, tA) = targetSupplier[motionComponent]
+			val (sV, sA) = stateSupplier[motionComponent]
 			DoublePose2D(tV - sV, tA.findError(sA))
 		},
 		toleranceEpsilon,

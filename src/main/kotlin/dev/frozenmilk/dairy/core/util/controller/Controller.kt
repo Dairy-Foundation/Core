@@ -17,9 +17,9 @@ import java.util.function.Supplier
 abstract class Controller<T : Any>
 @JvmOverloads
 constructor(
-	val targetSupplier: MotionComponentSupplier<out T>,
+	targetSupplier: MotionComponentSupplier<out T>,
 	val stateSupplier: MotionComponentSupplier<out T>,
-	val errorSupplier: CachedMotionComponentSupplier<out T>,
+	val errorCalculator: (target: MotionComponentSupplier<out T>, state: MotionComponentSupplier<out T>, motionComponent: MotionComponents) -> T,
 	var toleranceEpsilon: MotionComponentSupplier<out T>,
 	var outputConsumer: MotionComponentConsumer<T> = MotionComponentConsumer {},
 	val controllerCalculation: ControllerCalculation<T>,
@@ -27,25 +27,34 @@ constructor(
 	constructor(
 		targetSupplier: MotionComponentSupplier<out T>,
 		stateSupplier: MotionComponentSupplier<out T>,
-		errorSupplier: CachedMotionComponentSupplier<out T>,
+		errorCalculator: (target: MotionComponentSupplier<out T>, state: MotionComponentSupplier<out T>, motionComponent: MotionComponents) -> T,
 		toleranceEpsilon: MotionComponentSupplier<out T>,
 		outputConsumer: Consumer<in T>,
 		controllerCalculation: ControllerCalculation<T>,
 	) : this(
 		targetSupplier,
 		stateSupplier,
-		errorSupplier,
+		errorCalculator,
 		toleranceEpsilon,
-		{ outputConsumer.accept(it.get(MotionComponents.STATE)) },
+		{ outputConsumer.accept(it[MotionComponents.STATE]) },
 		controllerCalculation,
 	)
+
+	var targetSupplier = targetSupplier
+		set(value) {
+			controllerCalculation.targetChanged(value)
+			field = value
+		}
+	val errorSupplier = CachedMotionComponentSupplier {
+		errorCalculator(this.targetSupplier, this.stateSupplier, it)
+	}
 
 	private var previousTime = System.nanoTime()
 	final override val supplier: Supplier<out T> = Supplier {
 		val currentTime = System.nanoTime()
 		val deltaTime = (currentTime - previousTime) / 1e9
-		errorSupplier.reset()
-		val res = controllerCalculation.evaluate(zero, stateSupplier, targetSupplier, errorSupplier, deltaTime)
+		errorSupplier.invalidate()
+		val res = controllerCalculation.evaluate(zero, this.stateSupplier, this.targetSupplier, this.errorSupplier, deltaTime)
 		previousTime = currentTime
 		res
 	}

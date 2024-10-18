@@ -1,7 +1,6 @@
 package dev.frozenmilk.dairy.core.util.controller.calculation
 
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
-import org.jetbrains.annotations.Contract
 
 interface ControllerCalculation<T: Any> : ControllerComponent<T, T> {
 	/**
@@ -40,6 +39,13 @@ interface ControllerCalculation<T: Any> : ControllerComponent<T, T> {
 	 */
 	fun reset()
 
+	/**
+	 * called by tbe controller to notify this component that the target supplier has changed.
+	 *
+	 * @param newTarget the new target supplier of the controller
+	 */
+	fun targetChanged(newTarget: MotionComponentSupplier<out T>)
+
 	operator fun plus(toAdd: ControllerCalculation<T>): ControllerCalculation<T> = object : ControllerCalculation<T> {
 		override fun update(
 			accumulation: T,
@@ -63,6 +69,11 @@ interface ControllerCalculation<T: Any> : ControllerComponent<T, T> {
 		override fun reset() {
 			this@ControllerCalculation.reset()
 			toAdd.reset()
+		}
+
+		override fun targetChanged(newTarget: MotionComponentSupplier<out T>) {
+			this@ControllerCalculation.targetChanged(newTarget)
+			toAdd.targetChanged(newTarget)
 		}
 	}
 }

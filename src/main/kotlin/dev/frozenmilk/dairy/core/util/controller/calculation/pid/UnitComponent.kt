@@ -22,12 +22,15 @@ abstract class UnitComponent private constructor() {
 			error: MotionComponentSupplier<out RU>,
 			deltaTime: Double
 		): RU {
-			val res = error.get(motionComponent) * kP
+			val res = error[motionComponent] * kP
 			return if (res.isNaN()) accumulation
 			else accumulation + res
 		}
 
 		override fun reset() {}
+		override fun targetChanged(newTarget: MotionComponentSupplier<out RU>) {
+			reset()
+		}
 	}
 	class SqrtP <RU: ReifiedUnit<*, RU>> (val motionComponent: MotionComponents, var kSqrtP: Double) : ControllerCalculation<RU> {
 		override fun update(
@@ -52,6 +55,9 @@ abstract class UnitComponent private constructor() {
 		}
 
 		override fun reset() {}
+		override fun targetChanged(newTarget: MotionComponentSupplier<out RU>) {
+			reset()
+		}
 	}
 	class I <RU: ReifiedUnit<*, RU>> @JvmOverloads constructor(val motionComponent: MotionComponents, var kI: Double, var lowerLimit: RU? = null, var upperLimit: RU? = null) : ControllerCalculation<RU> {
 		var i: RU? = null
@@ -64,7 +70,7 @@ abstract class UnitComponent private constructor() {
 		) {
 			var iLocal = i;
 			if (iLocal == null) iLocal = accumulation - accumulation
-			iLocal += (error.get(motionComponent).intoCommon() / deltaTime) * kI
+			iLocal += (error[motionComponent].intoCommon() / deltaTime) * kI
 			if (lowerLimit != null) iLocal = iLocal.coerceAtLeast(lowerLimit!!)
 			if (upperLimit != null) iLocal = iLocal.coerceAtMost(upperLimit!!)
 			i = iLocal
@@ -85,6 +91,9 @@ abstract class UnitComponent private constructor() {
 
 		override fun reset() {
 			i = null
+		}
+		override fun targetChanged(newTarget: MotionComponentSupplier<out RU>) {
+			reset()
 		}
 	}
 	class D <RU: ReifiedUnit<*, RU>> (val motionComponent: MotionComponents, var kD: Double) : ControllerCalculation<RU> {
@@ -108,7 +117,7 @@ abstract class UnitComponent private constructor() {
 		): RU {
 			var prev = previousError
 			if (prev == null) prev = accumulation - accumulation
-			val err = error.get(motionComponent).intoCommon()
+			val err = error[motionComponent].intoCommon()
 			val res = ((err - prev) / deltaTime) * kD
 			previousError = err
 			return if (res.isNaN()) accumulation
@@ -117,6 +126,9 @@ abstract class UnitComponent private constructor() {
 
 		override fun reset() {
 			previousError = null
+		}
+		override fun targetChanged(newTarget: MotionComponentSupplier<out RU>) {
+			reset()
 		}
 	}
 }
