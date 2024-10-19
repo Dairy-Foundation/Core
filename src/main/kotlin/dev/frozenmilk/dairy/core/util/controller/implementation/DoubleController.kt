@@ -6,6 +6,7 @@ import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.logical.Conditional
 import dev.frozenmilk.dairy.core.util.supplier.numeric.CachedMotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.numeric.EnhancedComparableNumericSupplier
+import dev.frozenmilk.dairy.core.util.supplier.numeric.MCSErrorCalculator
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponents
 import dev.frozenmilk.util.units.getVelocity
 import dev.frozenmilk.util.units.homogenise
@@ -36,7 +37,7 @@ class DoubleController : Controller<Double>, EnhancedComparableNumericSupplier<D
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		{ targetSupplier, stateSupplier, motionComponent ->
+		MCSErrorCalculator { targetSupplier, stateSupplier, motionComponent ->
 			targetSupplier[motionComponent] - stateSupplier[motionComponent]
 		},
 		toleranceEpsilon,
@@ -59,7 +60,7 @@ class DoubleController : Controller<Double>, EnhancedComparableNumericSupplier<D
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		{ targetSupplier, stateSupplier, motionComponent ->
+		MCSErrorCalculator { targetSupplier, stateSupplier, motionComponent ->
 			targetSupplier[motionComponent] - stateSupplier[motionComponent]
 		},
 		toleranceEpsilon,

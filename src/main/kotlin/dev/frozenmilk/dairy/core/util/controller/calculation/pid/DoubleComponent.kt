@@ -31,9 +31,6 @@ abstract class DoubleComponent private constructor() {
 		}
 
 		override fun reset() {}
-		override fun targetChanged(newTarget: MotionComponentSupplier<out Double>) {
-			reset()
-		}
 	}
 	class SqrtP (val motionComponent: MotionComponents, var kSqrtP: Double) : ControllerCalculation<Double> {
 		override fun update(
@@ -58,9 +55,6 @@ abstract class DoubleComponent private constructor() {
 		}
 
 		override fun reset() {}
-		override fun targetChanged(newTarget: MotionComponentSupplier<out Double>) {
-			reset()
-		}
 	}
 	class I @JvmOverloads constructor(val motionComponent: MotionComponents, var kI: Double, var lowerLimit: Double = Double.NEGATIVE_INFINITY, var upperLimit: Double = Double.POSITIVE_INFINITY) : ControllerCalculation<Double> {
 		var i = 0.0
@@ -89,9 +83,6 @@ abstract class DoubleComponent private constructor() {
 
 		override fun reset() {
 			i = 0.0
-		}
-		override fun targetChanged(newTarget: MotionComponentSupplier<out Double>) {
-			reset()
 		}
 	}
 	class D (val motionComponent: MotionComponents, var kD: Double) : ControllerCalculation<Double> {
@@ -122,9 +113,6 @@ abstract class DoubleComponent private constructor() {
 
 		override fun reset() {
 			previousError = 0.0
-		}
-		override fun targetChanged(newTarget: MotionComponentSupplier<out Double>) {
-			reset()
 		}
 	}
 }

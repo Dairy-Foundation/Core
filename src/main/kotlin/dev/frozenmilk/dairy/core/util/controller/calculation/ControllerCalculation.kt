@@ -44,7 +44,9 @@ interface ControllerCalculation<T: Any> : ControllerComponent<T, T> {
 	 *
 	 * @param newTarget the new target supplier of the controller
 	 */
-	fun targetChanged(newTarget: MotionComponentSupplier<out T>)
+	fun targetChanged(newTarget: MotionComponentSupplier<out T>) {
+		reset()
+	}
 
 	operator fun plus(toAdd: ControllerCalculation<T>): ControllerCalculation<T> = object : ControllerCalculation<T> {
 		override fun update(

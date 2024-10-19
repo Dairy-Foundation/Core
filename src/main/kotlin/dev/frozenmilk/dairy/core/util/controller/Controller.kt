@@ -7,6 +7,7 @@ import dev.frozenmilk.dairy.core.util.controller.calculation.ControllerCalculati
 import dev.frozenmilk.dairy.core.util.controller.implementation.MotionComponentConsumer
 import dev.frozenmilk.dairy.core.util.supplier.numeric.CachedMotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.numeric.EnhancedNumericSupplier
+import dev.frozenmilk.dairy.core.util.supplier.numeric.MCSErrorCalculator
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponents
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
@@ -18,8 +19,8 @@ abstract class Controller<T : Any>
 @JvmOverloads
 constructor(
 	targetSupplier: MotionComponentSupplier<out T>,
-	val stateSupplier: MotionComponentSupplier<out T>,
-	val errorCalculator: (target: MotionComponentSupplier<out T>, state: MotionComponentSupplier<out T>, motionComponent: MotionComponents) -> T,
+	var stateSupplier: MotionComponentSupplier<out T>,
+	val errorCalculator: MCSErrorCalculator<T>,
 	var toleranceEpsilon: MotionComponentSupplier<out T>,
 	var outputConsumer: MotionComponentConsumer<T> = MotionComponentConsumer {},
 	val controllerCalculation: ControllerCalculation<T>,
@@ -27,7 +28,7 @@ constructor(
 	constructor(
 		targetSupplier: MotionComponentSupplier<out T>,
 		stateSupplier: MotionComponentSupplier<out T>,
-		errorCalculator: (target: MotionComponentSupplier<out T>, state: MotionComponentSupplier<out T>, motionComponent: MotionComponents) -> T,
+		errorCalculator: MCSErrorCalculator<T>,
 		toleranceEpsilon: MotionComponentSupplier<out T>,
 		outputConsumer: Consumer<in T>,
 		controllerCalculation: ControllerCalculation<T>,
@@ -47,6 +48,10 @@ constructor(
 		}
 	val errorSupplier = CachedMotionComponentSupplier {
 		errorCalculator(this.targetSupplier, this.stateSupplier, it)
+	}
+
+	init {
+		controllerCalculation.targetChanged(targetSupplier)
 	}
 
 	private var previousTime = System.nanoTime()

@@ -28,9 +28,6 @@ abstract class UnitComponent private constructor() {
 		}
 
 		override fun reset() {}
-		override fun targetChanged(newTarget: MotionComponentSupplier<out RU>) {
-			reset()
-		}
 	}
 	class SqrtP <RU: ReifiedUnit<*, RU>> (val motionComponent: MotionComponents, var kSqrtP: Double) : ControllerCalculation<RU> {
 		override fun update(
@@ -55,9 +52,6 @@ abstract class UnitComponent private constructor() {
 		}
 
 		override fun reset() {}
-		override fun targetChanged(newTarget: MotionComponentSupplier<out RU>) {
-			reset()
-		}
 	}
 	class I <RU: ReifiedUnit<*, RU>> @JvmOverloads constructor(val motionComponent: MotionComponents, var kI: Double, var lowerLimit: RU? = null, var upperLimit: RU? = null) : ControllerCalculation<RU> {
 		var i: RU? = null
@@ -92,9 +86,6 @@ abstract class UnitComponent private constructor() {
 		override fun reset() {
 			i = null
 		}
-		override fun targetChanged(newTarget: MotionComponentSupplier<out RU>) {
-			reset()
-		}
 	}
 	class D <RU: ReifiedUnit<*, RU>> (val motionComponent: MotionComponents, var kD: Double) : ControllerCalculation<RU> {
 		private var previousError: RU? = null
@@ -126,9 +117,6 @@ abstract class UnitComponent private constructor() {
 
 		override fun reset() {
 			previousError = null
-		}
-		override fun targetChanged(newTarget: MotionComponentSupplier<out RU>) {
-			reset()
 		}
 	}
 }
