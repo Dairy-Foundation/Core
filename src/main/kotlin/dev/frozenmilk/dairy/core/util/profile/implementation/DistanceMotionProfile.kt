@@ -1,22 +1,37 @@
 package dev.frozenmilk.dairy.core.util.profile.implementation
 
+import dev.frozenmilk.dairy.core.Feature
+import dev.frozenmilk.dairy.core.dependency.Dependency
 import dev.frozenmilk.dairy.core.util.profile.MotionProfile
+import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponents
+import dev.frozenmilk.dairy.core.wrapper.Wrapper
+import dev.frozenmilk.util.cell.LazyCell
 import dev.frozenmilk.util.units.distance.Distance
 import dev.frozenmilk.util.units.distance.DistanceUnit
 import dev.frozenmilk.util.units.distance.DistanceUnits
 import kotlin.math.abs
-import kotlin.math.sign
-import kotlin.math.sqrt
 import kotlin.random.Random
 
-class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
+class DistanceMotionProfile(beginState: State) : MotionProfile<Distance>, Feature {
+    override var dependency: Dependency<*> = Dependency { _, _, _ -> }
+
     val beginState: State
     private val accelSegments = ArrayList<AccelSegment>()
     var endState: State
         private set
     var totalDuration: Double = 0.0
         private set
-    val startTimestamp: Long = System.nanoTime()
+    private val startTimestampCell = LazyCell { System.nanoTime() }
+    val startTimestamp: Long by startTimestampCell
+    private val currentStateCell = LazyCell { get() }
+    val currentState by currentStateCell
+    var limitless: Boolean = false
+        set(value) {
+            if (field != value) {
+                field = value
+                currentStateCell.invalidate()
+            }
+        }
 
     init {
         this.beginState = State(beginState.position, beginState.velocity)
@@ -186,7 +201,7 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
         return endState
     }
 
-    override fun get(t: Double): State {
+    override fun getLimited(t: Double): State {
         if (t <= 0.0) {
             return beginState
         }
@@ -195,9 +210,9 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
         }
         return getInBounds(t)
     }
-    override fun get() = get((System.nanoTime() - startTimestamp).toDouble() / 1e9)
+    override fun getLimited() = getLimited((System.nanoTime() - startTimestamp).toDouble() / 1e9)
 
-    override fun getEndless(t: Double): State {
+    override fun getLimitless(t: Double): State {
         if (t <= 0.0) {
             return State(beginState.position + beginState.velocity * t, beginState.velocity)
         }
@@ -206,19 +221,46 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
         }
         return getInBounds(t)
     }
-    override fun getEndless() = getEndless((System.nanoTime() - startTimestamp).toDouble() / 1e9)
+    override fun getLimitless() = getLimitless((System.nanoTime() - startTimestamp).toDouble() / 1e9)
+
+    override fun get(t: Double): State {
+        return if (limitless) getLimitless(t) else getLimited(t)
+    }
+    override fun get() = get((System.nanoTime() - startTimestamp).toDouble() / 1e9)
+
+    override fun get(motionComponent: MotionComponents): Distance {
+        return when(motionComponent) {
+            MotionComponents.STATE -> currentState.position
+            MotionComponents.VELOCITY, MotionComponents.RAW_VELOCITY -> currentState.velocity
+            MotionComponents.ACCELERATION, MotionComponents.RAW_ACCELERATION -> currentState.acceleration
+        }
+    }
+
+    override fun reset() {
+        startTimestampCell.invalidate()
+        currentStateCell.invalidate()
+    }
+
+    override fun postUserInitLoopHook(opMode: Wrapper) {
+        currentStateCell.invalidate()
+    }
+    override fun postUserLoopHook(opMode: Wrapper) {
+        currentStateCell.invalidate()
+    }
 
 
     companion object {
         fun generateVelProfile(
             beginState: State,
             endVel: Distance,
-            constraints: Constraints
+            constraints: Constraints,
+            limitless: Boolean = false
         ): DistanceMotionProfile {
             return (if (beginState.velocity >= Distance())
                 generateVelProfileNonNegativeBeginVel(beginState, endVel.intoCommon(), constraints)
             else -generateVelProfileNonNegativeBeginVel(-beginState, -endVel.intoCommon(), constraints)
                     ).also {
+                it.limitless = limitless
                 if (!debugMode) it.endState = State(it.endState.position, endVel)
             }
         }
@@ -226,8 +268,9 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
         fun generateVelProfile(
             beginVel: Distance,
             endVel: Distance,
-            constraints: Constraints
-        ) = generateVelProfile(State(Distance(), beginVel), endVel, constraints)
+            constraints: Constraints,
+            limitless: Boolean = false
+        ) = generateVelProfile(State(Distance(), beginVel), endVel, constraints, limitless)
 
         private fun generateVelProfileNonNegativeBeginVel(
             beginState: State,
@@ -254,7 +297,8 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
         fun generateProfile(
             beginState: State,
             endState: State,
-            constraints: Constraints
+            constraints: Constraints,
+            limitless: Boolean = false
         ): DistanceMotionProfile {
             val seg1 = if (beginState.obeys(constraints)) AccelSegment() else AccelSegment(
                 -constraints.maxDeceleration * beginState.velocity.sign,
@@ -272,6 +316,7 @@ class DistanceMotionProfile(beginState: State) : MotionProfile<Distance> {
                 constraints
             )
             profile += seg2
+            profile.limitless = limitless
             if (!debugMode) profile.endState = State(endState.position, endState.velocity)
             return profile
         }
