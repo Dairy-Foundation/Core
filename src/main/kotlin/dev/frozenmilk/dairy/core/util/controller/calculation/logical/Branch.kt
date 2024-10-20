@@ -44,6 +44,9 @@ fun <T: Any, R: Any> ControllerComponent<T, R>.map(map: Map<R, ControllerCalcula
 		override fun reset() {
 			map.forEach { (_, v) -> v.reset() }
 		}
+		override fun targetChanged(newTarget: MotionComponentSupplier<out T>) {
+			map.forEach { (_, v) -> v.targetChanged(newTarget) }
+		}
 	}
 }
 
@@ -90,6 +93,9 @@ fun <T: Any, R: Any> ControllerComponent<T, R>.mapOrDefault(map: Map<R, Controll
 
 		override fun reset() {
 			map.forEach { (_, v) -> v.reset() }
+		}
+		override fun targetChanged(newTarget: MotionComponentSupplier<out T>) {
+			map.forEach { (_, v) -> v.targetChanged(newTarget) }
 		}
 	}
 }

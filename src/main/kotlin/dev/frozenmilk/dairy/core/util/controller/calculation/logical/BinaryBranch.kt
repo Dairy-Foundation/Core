@@ -45,6 +45,10 @@ fun <T : Any> ControllerComponent<T, Boolean>.eval(evalTrue: ControllerCalculati
 			evalTrue.reset()
 			evalFalse.reset()
 		}
+		override fun targetChanged(newTarget: MotionComponentSupplier<out T>) {
+			evalTrue.targetChanged(newTarget)
+			evalFalse.targetChanged(newTarget)
+		}
 	}
 }
 /**
@@ -78,6 +82,7 @@ fun <T : Any> ControllerComponent<T, Boolean>.evalTrue(evalTrue: ControllerCalcu
 		}
 
 		override fun reset() = evalTrue.reset()
+		override fun targetChanged(newTarget: MotionComponentSupplier<out T>) = evalTrue.targetChanged(newTarget)
 	}
 }
 
@@ -113,6 +118,7 @@ fun <T : Any> ControllerComponent<T, Boolean>.evalFalse(evalFalse: ControllerCal
 		}
 
 		override fun reset() = evalFalse.reset()
+		override fun targetChanged(newTarget: MotionComponentSupplier<out T>) = evalFalse.targetChanged(newTarget)
 	}
 }
 //

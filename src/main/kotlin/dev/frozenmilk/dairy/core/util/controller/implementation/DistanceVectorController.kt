@@ -3,6 +3,7 @@ package dev.frozenmilk.dairy.core.util.controller.implementation
 import dev.frozenmilk.dairy.core.util.controller.Controller
 import dev.frozenmilk.dairy.core.util.controller.calculation.ControllerCalculation
 import dev.frozenmilk.dairy.core.util.supplier.numeric.CachedMotionComponentSupplier
+import dev.frozenmilk.dairy.core.util.supplier.numeric.MCSErrorCalculator
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponents
 import dev.frozenmilk.util.units.getVelocity
@@ -34,8 +35,8 @@ class DistanceVectorController : Controller<DistanceVector2D> {
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		CachedMotionComponentSupplier {
-			targetSupplier[it] - stateSupplier[it]
+		MCSErrorCalculator { targetSupplier, stateSupplier, motionComponent ->
+			targetSupplier[motionComponent] - stateSupplier[motionComponent]
 		},
 		toleranceEpsilon,
 		outputConsumer,
@@ -57,8 +58,8 @@ class DistanceVectorController : Controller<DistanceVector2D> {
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		CachedMotionComponentSupplier {
-			targetSupplier[it] - stateSupplier[it]
+		MCSErrorCalculator { targetSupplier, stateSupplier, motionComponent ->
+			targetSupplier[motionComponent] - stateSupplier[motionComponent]
 		},
 		toleranceEpsilon,
 		outputConsumer,

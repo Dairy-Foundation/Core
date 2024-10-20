@@ -6,6 +6,7 @@ import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.logical.Conditional
 import dev.frozenmilk.dairy.core.util.supplier.numeric.CachedMotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.numeric.EnhancedComparableNumericSupplier
+import dev.frozenmilk.dairy.core.util.supplier.numeric.MCSErrorCalculator
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponents
 import dev.frozenmilk.util.units.ReifiedUnit
 import dev.frozenmilk.util.units.getVelocity
@@ -36,8 +37,8 @@ class UnitController<RU: ReifiedUnit<*, RU>> : Controller<RU>, EnhancedComparabl
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		CachedMotionComponentSupplier {
-			targetSupplier[it].findError(stateSupplier[it])
+		MCSErrorCalculator { targetSupplier, stateSupplier, motionComponent ->
+			targetSupplier[motionComponent].findError(stateSupplier[motionComponent])
 		},
 		toleranceEpsilon,
 		outputConsumer,
@@ -59,8 +60,8 @@ class UnitController<RU: ReifiedUnit<*, RU>> : Controller<RU>, EnhancedComparabl
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		CachedMotionComponentSupplier {
-			targetSupplier[it].findError(stateSupplier[it])
+		MCSErrorCalculator { targetSupplier, stateSupplier, motionComponent ->
+			targetSupplier[motionComponent].findError(stateSupplier[motionComponent])
 		},
 		toleranceEpsilon,
 		outputConsumer,
