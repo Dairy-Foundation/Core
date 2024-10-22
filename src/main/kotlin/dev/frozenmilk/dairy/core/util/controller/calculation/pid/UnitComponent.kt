@@ -4,6 +4,9 @@ import dev.frozenmilk.dairy.core.util.controller.calculation.ControllerCalculati
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponents
 import dev.frozenmilk.util.units.ReifiedUnit
+import dev.frozenmilk.util.units.angle.Angle
+import kotlin.math.cos
+import kotlin.math.sign
 
 abstract class UnitComponent private constructor() {
 	class P <RU: ReifiedUnit<*, RU>> (val motionComponent: MotionComponents, var kP: Double) : ControllerCalculation<RU> {
@@ -118,5 +121,98 @@ abstract class UnitComponent private constructor() {
 		override fun reset() {
 			previousError = null
 		}
+	}
+
+	class FF <RU: ReifiedUnit<*, RU>> (val motionComponent: MotionComponents, var kFF: Double) : ControllerCalculation<RU> {
+		override fun update(
+			accumulation: RU,
+			state: MotionComponentSupplier<out RU>,
+			target: MotionComponentSupplier<out RU>,
+			error: MotionComponentSupplier<out RU>,
+			deltaTime: Double
+		) {}
+
+		override fun evaluate(
+			accumulation: RU,
+			state: MotionComponentSupplier<out RU>,
+			target: MotionComponentSupplier<out RU>,
+			error: MotionComponentSupplier<out RU>,
+			deltaTime: Double
+		): RU {
+			val res = target[motionComponent] * kFF
+			return if (res.isNaN()) accumulation
+			else accumulation + res
+		}
+
+		override fun reset() {}
+	}
+	class SignFF <RU: ReifiedUnit<*, RU>> (val motionComponent: MotionComponents, var kFF: RU) : ControllerCalculation<RU> {
+		override fun update(
+			accumulation: RU,
+			state: MotionComponentSupplier<out RU>,
+			target: MotionComponentSupplier<out RU>,
+			error: MotionComponentSupplier<out RU>,
+			deltaTime: Double
+		) {}
+
+		override fun evaluate(
+			accumulation: RU,
+			state: MotionComponentSupplier<out RU>,
+			target: MotionComponentSupplier<out RU>,
+			error: MotionComponentSupplier<out RU>,
+			deltaTime: Double
+		): RU {
+			val res = kFF * target[motionComponent].sign
+			return if (res.isNaN()) accumulation
+			else accumulation + res
+		}
+
+		override fun reset() {}
+	}
+	class CosFF (val motionComponent: MotionComponents, var kFF: Angle) : ControllerCalculation<Angle> {
+		override fun update(
+			accumulation: Angle,
+			state: MotionComponentSupplier<out Angle>,
+			target: MotionComponentSupplier<out Angle>,
+			error: MotionComponentSupplier<out Angle>,
+			deltaTime: Double
+		) {}
+
+		override fun evaluate(
+			accumulation: Angle,
+			state: MotionComponentSupplier<out Angle>,
+			target: MotionComponentSupplier<out Angle>,
+			error: MotionComponentSupplier<out Angle>,
+			deltaTime: Double
+		): Angle {
+			val res = kFF * target[motionComponent].cos
+			return if (res.isNaN()) accumulation
+			else accumulation + res
+		}
+
+		override fun reset() {}
+	}
+
+	class Constant <RU: ReifiedUnit<*, RU>> (var k: RU) : ControllerCalculation<RU> {
+		override fun update(
+			accumulation: RU,
+			state: MotionComponentSupplier<out RU>,
+			target: MotionComponentSupplier<out RU>,
+			error: MotionComponentSupplier<out RU>,
+			deltaTime: Double
+		) {}
+
+		override fun evaluate(
+			accumulation: RU,
+			state: MotionComponentSupplier<out RU>,
+			target: MotionComponentSupplier<out RU>,
+			error: MotionComponentSupplier<out RU>,
+			deltaTime: Double
+		): RU {
+			return if (k.isNaN()) accumulation
+			else accumulation + k
+		}
+
+		override fun reset() {}
 	}
 }

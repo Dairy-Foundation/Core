@@ -5,6 +5,7 @@ import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponents
 import kotlin.math.abs
 import kotlin.math.absoluteValue
+import kotlin.math.cos
 import kotlin.math.sign
 import kotlin.math.sqrt
 
@@ -114,5 +115,98 @@ abstract class DoubleComponent private constructor() {
 		override fun reset() {
 			previousError = 0.0
 		}
+	}
+
+	class FF (val motionComponent: MotionComponents, var kFF: Double) : ControllerCalculation<Double> {
+		override fun update(
+			accumulation: Double,
+			state: MotionComponentSupplier<out Double>,
+			target: MotionComponentSupplier<out Double>,
+			error: MotionComponentSupplier<out Double>,
+			deltaTime: Double
+		) {}
+
+		override fun evaluate(
+			accumulation: Double,
+			state: MotionComponentSupplier<out Double>,
+			target: MotionComponentSupplier<out Double>,
+			error: MotionComponentSupplier<out Double>,
+			deltaTime: Double
+		): Double {
+			val res = target[motionComponent] * kFF
+			return if (res.isNaN()) accumulation
+			else accumulation + res
+		}
+
+		override fun reset() {}
+	}
+	class SignFF (val motionComponent: MotionComponents, var kFF: Double) : ControllerCalculation<Double> {
+		override fun update(
+			accumulation: Double,
+			state: MotionComponentSupplier<out Double>,
+			target: MotionComponentSupplier<out Double>,
+			error: MotionComponentSupplier<out Double>,
+			deltaTime: Double
+		) {}
+
+		override fun evaluate(
+			accumulation: Double,
+			state: MotionComponentSupplier<out Double>,
+			target: MotionComponentSupplier<out Double>,
+			error: MotionComponentSupplier<out Double>,
+			deltaTime: Double
+		): Double {
+			val res = target[motionComponent].sign * kFF
+			return if (res.isNaN()) accumulation
+			else accumulation + res
+		}
+
+		override fun reset() {}
+	}
+	class CosFF (val motionComponent: MotionComponents, var kFF: Double) : ControllerCalculation<Double> {
+		override fun update(
+			accumulation: Double,
+			state: MotionComponentSupplier<out Double>,
+			target: MotionComponentSupplier<out Double>,
+			error: MotionComponentSupplier<out Double>,
+			deltaTime: Double
+		) {}
+
+		override fun evaluate(
+			accumulation: Double,
+			state: MotionComponentSupplier<out Double>,
+			target: MotionComponentSupplier<out Double>,
+			error: MotionComponentSupplier<out Double>,
+			deltaTime: Double
+		): Double {
+			val res = cos(target[motionComponent]) * kFF
+			return if (res.isNaN()) accumulation
+			else accumulation + res
+		}
+
+		override fun reset() {}
+	}
+
+	class Constant (var k: Double) : ControllerCalculation<Double> {
+		override fun update(
+			accumulation: Double,
+			state: MotionComponentSupplier<out Double>,
+			target: MotionComponentSupplier<out Double>,
+			error: MotionComponentSupplier<out Double>,
+			deltaTime: Double
+		) {}
+
+		override fun evaluate(
+			accumulation: Double,
+			state: MotionComponentSupplier<out Double>,
+			target: MotionComponentSupplier<out Double>,
+			error: MotionComponentSupplier<out Double>,
+			deltaTime: Double
+		): Double {
+			return if (k.isNaN()) accumulation
+			else accumulation + k
+		}
+
+		override fun reset() {}
 	}
 }
