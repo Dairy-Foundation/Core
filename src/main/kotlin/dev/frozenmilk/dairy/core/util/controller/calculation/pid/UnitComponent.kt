@@ -169,7 +169,30 @@ abstract class UnitComponent private constructor() {
 
 		override fun reset() {}
 	}
-	class CosFF (val motionComponent: MotionComponents, var kFF: Angle) : ControllerCalculation<Angle> {
+	class StateCosFF (val motionComponent: MotionComponents, var kFF: Angle) : ControllerCalculation<Angle> {
+		override fun update(
+			accumulation: Angle,
+			state: MotionComponentSupplier<out Angle>,
+			target: MotionComponentSupplier<out Angle>,
+			error: MotionComponentSupplier<out Angle>,
+			deltaTime: Double
+		) {}
+
+		override fun evaluate(
+			accumulation: Angle,
+			state: MotionComponentSupplier<out Angle>,
+			target: MotionComponentSupplier<out Angle>,
+			error: MotionComponentSupplier<out Angle>,
+			deltaTime: Double
+		): Angle {
+			val res = kFF * state[motionComponent].cos
+			return if (res.isNaN()) accumulation
+			else accumulation + res
+		}
+
+		override fun reset() {}
+	}
+	class TargetCosFF (val motionComponent: MotionComponents, var kFF: Angle) : ControllerCalculation<Angle> {
 		override fun update(
 			accumulation: Angle,
 			state: MotionComponentSupplier<out Angle>,

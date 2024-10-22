@@ -163,7 +163,30 @@ abstract class DoubleComponent private constructor() {
 
 		override fun reset() {}
 	}
-	class CosFF (val motionComponent: MotionComponents, var kFF: Double) : ControllerCalculation<Double> {
+	class StateCosFF (val motionComponent: MotionComponents, var kFF: Double) : ControllerCalculation<Double> {
+		override fun update(
+			accumulation: Double,
+			state: MotionComponentSupplier<out Double>,
+			target: MotionComponentSupplier<out Double>,
+			error: MotionComponentSupplier<out Double>,
+			deltaTime: Double
+		) {}
+
+		override fun evaluate(
+			accumulation: Double,
+			state: MotionComponentSupplier<out Double>,
+			target: MotionComponentSupplier<out Double>,
+			error: MotionComponentSupplier<out Double>,
+			deltaTime: Double
+		): Double {
+			val res = cos(state[motionComponent]) * kFF
+			return if (res.isNaN()) accumulation
+			else accumulation + res
+		}
+
+		override fun reset() {}
+	}
+	class TargetCosFF (val motionComponent: MotionComponents, var kFF: Double) : ControllerCalculation<Double> {
 		override fun update(
 			accumulation: Double,
 			state: MotionComponentSupplier<out Double>,
