@@ -3,7 +3,6 @@ package dev.frozenmilk.dairy.core.util.controller.calculation.pid
 import dev.frozenmilk.dairy.core.util.controller.calculation.ControllerCalculation
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponents
-import kotlin.math.abs
 import kotlin.math.absoluteValue
 import kotlin.math.sign
 import kotlin.math.sqrt

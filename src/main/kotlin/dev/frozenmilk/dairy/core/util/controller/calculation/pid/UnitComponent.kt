@@ -96,7 +96,7 @@ abstract class UnitComponent private constructor() {
 			error: MotionComponentSupplier<out RU>,
 			deltaTime: Double
 		) {
-			previousError = error.get(motionComponent).intoCommon()
+			previousError = error[motionComponent].intoCommon()
 		}
 
 		override fun evaluate(
