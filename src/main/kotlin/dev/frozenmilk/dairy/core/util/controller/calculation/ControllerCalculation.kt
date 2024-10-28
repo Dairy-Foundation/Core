@@ -2,6 +2,7 @@ package dev.frozenmilk.dairy.core.util.controller.calculation
 
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
 
+@JvmDefaultWithoutCompatibility
 interface ControllerCalculation<T: Any> : ControllerComponent<T, T> {
 	/**
 	 * Should be called every loop if this is in use, but it will not be evaluated.
@@ -40,13 +41,13 @@ interface ControllerCalculation<T: Any> : ControllerComponent<T, T> {
 	fun reset()
 
 	/**
-	 * called by tbe controller to notify this component that the target supplier has changed.
+	 * called by the controller to notify this component that the target supplier has changed.
+	 *
+	 * calls [reset] by default
 	 *
 	 * @param newTarget the new target supplier of the controller
 	 */
-	fun targetChanged(newTarget: MotionComponentSupplier<out T>) {
-		reset()
-	}
+	fun targetChanged(newTarget: MotionComponentSupplier<out T>) = reset()
 
 	operator fun plus(toAdd: ControllerCalculation<T>): ControllerCalculation<T> = object : ControllerCalculation<T> {
 		override fun update(
