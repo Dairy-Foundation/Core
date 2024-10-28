@@ -3,6 +3,7 @@ package dev.frozenmilk.dairy.core.util.controller.implementation
 import dev.frozenmilk.dairy.core.util.controller.Controller
 import dev.frozenmilk.dairy.core.util.controller.calculation.ControllerCalculation
 import dev.frozenmilk.dairy.core.util.supplier.numeric.CachedMotionComponentSupplier
+import dev.frozenmilk.dairy.core.util.supplier.numeric.MCSErrorCalculator
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponents
 import dev.frozenmilk.util.units.getVelocity
@@ -34,8 +35,10 @@ class DoublePoseController : Controller<DoublePose2D> {
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		CachedMotionComponentSupplier {
-			targetSupplier.get(it) - stateSupplier.get(it)
+		MCSErrorCalculator { targetSupplier, stateSupplier, motionComponent ->
+			val (tV, tA) = targetSupplier[motionComponent]
+			val (sV, sA) = stateSupplier[motionComponent]
+			DoublePose2D(tV - sV, tA.findError(sA))
 		},
 		toleranceEpsilon,
 		outputConsumer,
@@ -57,9 +60,9 @@ class DoublePoseController : Controller<DoublePose2D> {
 	) : super(
 		targetSupplier,
 		stateSupplier,
-		CachedMotionComponentSupplier {
-			val (tV, tA) = targetSupplier.get(it)
-			val (sV, sA) = stateSupplier.get(it)
+		MCSErrorCalculator { targetSupplier, stateSupplier, motionComponent ->
+			val (tV, tA) = targetSupplier[motionComponent]
+			val (sV, sA) = stateSupplier[motionComponent]
 			DoublePose2D(tV - sV, tA.findError(sA))
 		},
 		toleranceEpsilon,

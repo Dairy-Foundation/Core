@@ -7,6 +7,7 @@ import dev.frozenmilk.dairy.core.util.controller.calculation.ControllerCalculati
 import dev.frozenmilk.dairy.core.util.controller.implementation.MotionComponentConsumer
 import dev.frozenmilk.dairy.core.util.supplier.numeric.CachedMotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.numeric.EnhancedNumericSupplier
+import dev.frozenmilk.dairy.core.util.supplier.numeric.MCSErrorCalculator
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponents
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
@@ -17,9 +18,9 @@ import java.util.function.Supplier
 abstract class Controller<T : Any>
 @JvmOverloads
 constructor(
-	val targetSupplier: MotionComponentSupplier<out T>,
-	val stateSupplier: MotionComponentSupplier<out T>,
-	val errorSupplier: CachedMotionComponentSupplier<out T>,
+	targetSupplier: MotionComponentSupplier<out T>,
+	var stateSupplier: MotionComponentSupplier<out T>,
+	val errorCalculator: MCSErrorCalculator<T>,
 	var toleranceEpsilon: MotionComponentSupplier<out T>,
 	var outputConsumer: MotionComponentConsumer<T> = MotionComponentConsumer {},
 	val controllerCalculation: ControllerCalculation<T>,
@@ -27,25 +28,38 @@ constructor(
 	constructor(
 		targetSupplier: MotionComponentSupplier<out T>,
 		stateSupplier: MotionComponentSupplier<out T>,
-		errorSupplier: CachedMotionComponentSupplier<out T>,
+		errorCalculator: MCSErrorCalculator<T>,
 		toleranceEpsilon: MotionComponentSupplier<out T>,
 		outputConsumer: Consumer<in T>,
 		controllerCalculation: ControllerCalculation<T>,
 	) : this(
 		targetSupplier,
 		stateSupplier,
-		errorSupplier,
+		errorCalculator,
 		toleranceEpsilon,
-		{ outputConsumer.accept(it.get(MotionComponents.STATE)) },
+		{ outputConsumer.accept(it[MotionComponents.STATE]) },
 		controllerCalculation,
 	)
+
+	var targetSupplier = targetSupplier
+		set(value) {
+			controllerCalculation.targetChanged(value)
+			field = value
+		}
+	val errorSupplier = CachedMotionComponentSupplier {
+		errorCalculator(this.targetSupplier, this.stateSupplier, it)
+	}
+
+	init {
+		controllerCalculation.targetChanged(targetSupplier)
+	}
 
 	private var previousTime = System.nanoTime()
 	final override val supplier: Supplier<out T> = Supplier {
 		val currentTime = System.nanoTime()
 		val deltaTime = (currentTime - previousTime) / 1e9
-		errorSupplier.reset()
-		val res = controllerCalculation.evaluate(zero, stateSupplier, targetSupplier, errorSupplier, deltaTime)
+		errorSupplier.invalidate()
+		val res = controllerCalculation.evaluate(zero, this.stateSupplier, this.targetSupplier, this.errorSupplier, deltaTime)
 		previousTime = currentTime
 		res
 	}

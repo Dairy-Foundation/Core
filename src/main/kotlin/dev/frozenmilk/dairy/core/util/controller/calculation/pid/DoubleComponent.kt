@@ -3,7 +3,6 @@ package dev.frozenmilk.dairy.core.util.controller.calculation.pid
 import dev.frozenmilk.dairy.core.util.controller.calculation.ControllerCalculation
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponentSupplier
 import dev.frozenmilk.dairy.core.util.supplier.numeric.MotionComponents
-import kotlin.math.abs
 import kotlin.math.absoluteValue
 import kotlin.math.cos
 import kotlin.math.sign
@@ -26,7 +25,7 @@ abstract class DoubleComponent private constructor() {
 			error: MotionComponentSupplier<out Double>,
 			deltaTime: Double
 		): Double {
-			val res = error.get(motionComponent) * kP
+			val res = error[motionComponent] * kP
 			return if (res.isNaN()) accumulation
 			else accumulation + res
 		}
@@ -66,7 +65,7 @@ abstract class DoubleComponent private constructor() {
 			error: MotionComponentSupplier<out Double>,
 			deltaTime: Double
 		) {
-			i += (error.get(motionComponent) / deltaTime) * kI
+			i += (error[motionComponent] / deltaTime) * kI
 			i = i.coerceIn(lowerLimit, upperLimit)
 		}
 
@@ -95,7 +94,7 @@ abstract class DoubleComponent private constructor() {
 			error: MotionComponentSupplier<out Double>,
 			deltaTime: Double
 		) {
-			previousError = error.get(motionComponent)
+			previousError = error[motionComponent]
 		}
 
 		override fun evaluate(
@@ -105,7 +104,7 @@ abstract class DoubleComponent private constructor() {
 			error: MotionComponentSupplier<out Double>,
 			deltaTime: Double
 		): Double {
-			val err = error.get(motionComponent);
+			val err = error[motionComponent];
 			val res = ((err - previousError) / deltaTime) * kD
 			previousError = err
 			if (res.isNaN()) return accumulation
