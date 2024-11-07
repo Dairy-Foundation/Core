@@ -2,7 +2,7 @@ package dev.frozenmilk.dairy.core
 
 import dev.frozenmilk.dairy.core.dependency.Dependency
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
-import dev.frozenmilk.sinister.Preload
+import dev.frozenmilk.sinister.loading.Preload
 
 /**
  * Objects which implement this can run actions against a wide range of hooks into all OpModes
