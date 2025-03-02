@@ -39,6 +39,13 @@ android {
 	}
 }
 
+repositories {
+	maven {
+		name = "dairyReleases"
+		url = uri("https://repo.dairy.foundation/releases")
+	}
+}
+
 dependencies {
 	testFixturesApi("junit:junit:4.13.2")
 	testFixturesImplementation("io.github.classgraph:classgraph:4.8.174")
@@ -47,7 +54,8 @@ dependencies {
 	//noinspection GradleDependency
 	implementation("androidx.appcompat:appcompat:1.2.0")
 
-	api(project(":Sinister"))
+	api("dev.frozenmilk.dairy:Util-Unit:1.1.0")
+	api("dev.frozenmilk.sinister:Sloth:0.1.0")
 
 	compileOnly("org.firstinspires.ftc:RobotCore:10.0.0")
 	compileOnly("org.firstinspires.ftc:Hardware:10.0.0")
@@ -77,7 +85,7 @@ publishing {
 		register<MavenPublication>("release") {
 			groupId = "dev.frozenmilk.dairy"
 			artifactId = "Core"
-			version = "2.0.0"
+			version = "2.1.0"
 
 			afterEvaluate {
 				from(components["release"])

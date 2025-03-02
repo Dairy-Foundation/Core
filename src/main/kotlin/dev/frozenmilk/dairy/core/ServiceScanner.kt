@@ -5,23 +5,31 @@ import dev.frozenmilk.sinister.Scanner
 import dev.frozenmilk.sinister.staticInstancesOf
 import dev.frozenmilk.sinister.targeting.WideSearch
 
+@Suppress("unused")
 private object ServiceScanner : Scanner {
-	private const val TAG = "ServiceScanner"
+	private val TAG = javaClass.simpleName
+	override val loadAdjacencyRule = afterConfiguration()
+	override val unloadAdjacencyRule = beforeConfiguration()
 	override val targets = WideSearch()
+	private val serviceMap = mutableMapOf<ClassLoader, MutableList<Feature>>()
 
-	override fun scan(cls: Class<*>) {
-		cls.staticInstancesOf(Feature::class.java)
-				.forEach {
-					RobotLog.vv(TAG, "registering found feature instance: ${it::class.java.simpleName}")
-					FeatureRegistrar.registerFeature(it)
-				}
+	override fun beforeScan(loader: ClassLoader) {
+		serviceMap[loader] = mutableListOf()
 	}
-
-	override fun unload(cls: Class<*>) {
+	override fun scan(loader: ClassLoader, cls: Class<*>) {
 		cls.staticInstancesOf(Feature::class.java)
 			.forEach {
-				RobotLog.vv(TAG, "unloading found feature instance: ${it::class.java.simpleName}")
-				FeatureRegistrar.deregisterFeature(it)
+				RobotLog.vv(TAG, "registering found feature instance: ${it::class.java.simpleName}")
+				serviceMap[loader]!!.add(it)
+				FeatureRegistrar.registerFeature(it)
 			}
 	}
+
+	override fun beforeUnload(loader: ClassLoader) {
+		serviceMap.remove(loader)?.forEach {
+			RobotLog.vv(TAG, "unloading found feature instance: ${it::class.java.simpleName}")
+			FeatureRegistrar.deregisterFeature(it)
+		}
+	}
+	override fun unload(loader: ClassLoader, cls: Class<*>) {}
 }

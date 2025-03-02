@@ -12,8 +12,8 @@ import dev.frozenmilk.dairy.core.dependency.resolution.resolveDependencies
 import dev.frozenmilk.dairy.core.wrapper.LinearOpModeWrapper
 import dev.frozenmilk.dairy.core.wrapper.OpModeWrapper
 import dev.frozenmilk.dairy.core.wrapper.Wrapper
-import dev.frozenmilk.sinister.apphooks.OnCreateEventLoop
 import dev.frozenmilk.sinister.inheritsAnnotation
+import dev.frozenmilk.sinister.sdk.apphooks.OnCreateEventLoop
 import dev.frozenmilk.util.cell.LateInitCell
 import dev.frozenmilk.util.cell.LazyCell
 import dev.frozenmilk.util.cell.MirroredCell
