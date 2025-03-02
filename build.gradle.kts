@@ -37,6 +37,12 @@ android {
 			}
 		}
 	}
+	publishing {
+		multipleVariants {
+			allVariants()
+			withJavadocJar()
+		}
+	}
 }
 
 dependencies {
@@ -74,13 +80,13 @@ publishing {
 		}
 	}
 	publications {
-		register<MavenPublication>("release") {
+		register<MavenPublication>("default") {
 			groupId = "dev.frozenmilk.dairy"
 			artifactId = "Core"
-			version = "1.0.0"
+			version = "1.0.1"
 
 			afterEvaluate {
-				from(components["release"])
+				from(components["default"])
 			}
 		}
 	}
