@@ -8,8 +8,8 @@ import dev.frozenmilk.sinister.targeting.WideSearch
 @Suppress("unused")
 private object ServiceScanner : Scanner {
 	private val TAG = javaClass.simpleName
-	override val loadAdjacencyRule = afterConfiguration()
-	override val unloadAdjacencyRule = beforeConfiguration()
+	override val loadAdjacencyRule = Scanner.INDEPENDENT
+	override val unloadAdjacencyRule = Scanner.INDEPENDENT
 	override val targets = WideSearch()
 	private val serviceMap = mutableMapOf<ClassLoader, MutableList<Feature>>()
 
