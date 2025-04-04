@@ -86,6 +86,7 @@ class DistancePoseController : Controller<DistancePose2D> {
 	//
 	override val zero = DistancePose2D()
 	private var offset = zero
+	override var currentState = supplier.get()
 	@get:JvmName("state")
 	@set:JvmName("state")
 	override var state: DistancePose2D

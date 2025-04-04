@@ -49,7 +49,6 @@ constructor(
 		previousTime = currentTime
 		res
 	}
-	override var currentState: T = supplier.get()
 
 	/**
 	 * the current output of the controller

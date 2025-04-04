@@ -80,6 +80,7 @@ class DistanceVectorController : Controller<DistanceVector2D> {
 	//
 	override val zero = DistanceVector2D()
 	private var offset = zero
+	override var currentState = supplier.get()
 	@get:JvmName("state")
 	@set:JvmName("state")
 	override var state: DistanceVector2D

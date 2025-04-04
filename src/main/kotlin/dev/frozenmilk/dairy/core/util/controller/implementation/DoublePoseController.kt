@@ -86,6 +86,7 @@ class DoublePoseController : Controller<DoublePose2D> {
 	//
 	override val zero = DoublePose2D()
 	private var offset = zero
+	override var currentState = supplier.get()
 	@get:JvmName("state")
 	@set:JvmName("state")
 	override var state: DoublePose2D

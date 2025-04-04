@@ -82,7 +82,7 @@ class DoubleController : Controller<Double>, EnhancedComparableNumericSupplier<D
 	//
 	override val zero = 0.0
 	private var offset = zero
-
+	override var currentState = supplier.get()
 	@get:JvmName("state")
 	@set:JvmName("state")
 	override var state: Double

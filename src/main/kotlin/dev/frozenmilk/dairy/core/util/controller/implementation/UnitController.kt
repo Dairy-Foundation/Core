@@ -82,6 +82,7 @@ class UnitController<RU: ReifiedUnit<*, RU>> : Controller<RU>, EnhancedComparabl
 	//
 	override val zero = stateSupplier[MotionComponents.STATE].let { it - it }
 	private var offset = zero
+	override var currentState = supplier.get()
 	@get:JvmName("state")
 	@set:JvmName("state")
 	override var state: RU
