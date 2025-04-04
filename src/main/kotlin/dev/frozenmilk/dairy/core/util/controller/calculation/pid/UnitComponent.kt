@@ -25,7 +25,7 @@ abstract class UnitComponent private constructor() {
 			error: MotionComponentSupplier<out RU>,
 			deltaTime: Double
 		): RU {
-			val res = error.get(motionComponent) * kP
+			val res = error[motionComponent] * kP
 			return if (res.isNaN()) accumulation
 			else accumulation + res
 		}
@@ -67,7 +67,7 @@ abstract class UnitComponent private constructor() {
 		) {
 			var iLocal = i;
 			if (iLocal == null) iLocal = accumulation - accumulation
-			iLocal += (error.get(motionComponent).intoCommon() / deltaTime) * kI
+			iLocal += (error[motionComponent].intoCommon() / deltaTime) * kI
 			if (lowerLimit != null) iLocal = iLocal.coerceAtLeast(lowerLimit!!)
 			if (upperLimit != null) iLocal = iLocal.coerceAtMost(upperLimit!!)
 			i = iLocal
@@ -99,7 +99,7 @@ abstract class UnitComponent private constructor() {
 			error: MotionComponentSupplier<out RU>,
 			deltaTime: Double
 		) {
-			previousError = error.get(motionComponent).intoCommon()
+			previousError = error[motionComponent].intoCommon()
 		}
 
 		override fun evaluate(
@@ -111,7 +111,7 @@ abstract class UnitComponent private constructor() {
 		): RU {
 			var prev = previousError
 			if (prev == null) prev = accumulation - accumulation
-			val err = error.get(motionComponent).intoCommon()
+			val err = error[motionComponent].intoCommon()
 			val res = ((err - prev) / deltaTime) * kD
 			previousError = err
 			return if (res.isNaN()) accumulation
