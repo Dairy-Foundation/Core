@@ -55,7 +55,7 @@ dependencies {
 	implementation("androidx.appcompat:appcompat:1.2.0")
 
 	api("dev.frozenmilk.dairy:Util-Unit:1.1.0")
-	api("dev.frozenmilk.sinister:Sloth:0.2.2")
+	api("dev.frozenmilk.sinister:Sloth:0.2.3")
 
 	compileOnly("org.firstinspires.ftc:RobotCore:10.0.0")
 	compileOnly("org.firstinspires.ftc:Hardware:10.0.0")
@@ -85,7 +85,7 @@ publishing {
 		register<MavenPublication>("release") {
 			groupId = "dev.frozenmilk.dairy"
 			artifactId = "Core"
-			version = "2.2.2"
+			version = "2.2.3"
 
 			afterEvaluate {
 				from(components["release"])
